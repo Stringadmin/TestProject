@@ -6,9 +6,5 @@
   "rewrites": [
     { "source": "/", "destination": "/test.html" },
     { "source": "/comfyui/:match*", "destination": "/app.js" }
-  ],
-  "static": {
-    "directory": ".", 
-    "include": ["**/*.html", "**/*.js", "**/*.json"] 
-  }
+  ]
 }
