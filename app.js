@@ -21,6 +21,11 @@ const upload = multer({ storage: storage });
 // 中间件
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// 静态文件与首页
+app.use(express.static(__dirname));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test.html'));
+});
 
 // 路由
 app.use('/', upload.single('file'), indexRouter);
