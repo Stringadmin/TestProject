@@ -1,7 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/", "destination": "/test.html" },
+    { "source": "/", "destination": "/index.html" },
     { "source": "/comfyui/:match*", "destination": "/api/index" }
   ]
 }

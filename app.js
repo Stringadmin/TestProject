@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 // 静态文件与首页
 app.use(express.static(__dirname));
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'test.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 路由
