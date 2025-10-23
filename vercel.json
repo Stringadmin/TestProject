@@ -4,6 +4,7 @@
     { "src": "app.js", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/", "dest": "/test.html" },
     { "src": "/comfyui/(.*)", "dest": "app.js" },
     { "src": "/(index\\.html|test\\.html|more\\.html)$", "dest": "/$1" },
     { "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg))$", "dest": "/$1" }
