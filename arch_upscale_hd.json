@@ -1,0 +1,1944 @@
+{
+  "id": "119954a3-ee7b-46a8-b363-0719a62b808f",
+  "revision": 0,
+  "last_node_id": 184,
+  "last_link_id": 474,
+  "nodes": [
+    {
+      "id": 161,
+      "type": "SamplerCustomAdvanced",
+      "pos": {
+        "0": 7851.25341796875,
+        "1": 448.2826843261719
+      },
+      "size": {
+        "0": 323.118896484375,
+        "1": 209.93569946289062
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "噪波生成",
+          "name": "noise",
+          "type": "NOISE",
+          "link": 442
+        },
+        {
+          "label": "引导",
+          "name": "guider",
+          "type": "GUIDER",
+          "link": 443
+        },
+        {
+          "label": "采样器",
+          "name": "sampler",
+          "type": "SAMPLER",
+          "link": 444
+        },
+        {
+          "label": "Sigmas",
+          "name": "sigmas",
+          "type": "SIGMAS",
+          "link": 445
+        },
+        {
+          "label": "Latent",
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 446
+        }
+      ],
+      "outputs": [
+        {
+          "label": "输出",
+          "name": "output",
+          "shape": 3,
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            451
+          ]
+        },
+        {
+          "label": "降噪输出",
+          "name": "denoised_output",
+          "shape": 3,
+          "type": "LATENT"
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "SamplerCustomAdvanced",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 164,
+      "type": "RandomNoise",
+      "pos": {
+        "0": 6331.25341796875,
+        "1": 848.282470703125
+      },
+      "size": {
+        "0": 318.5845947265625,
+        "1": 89.42757415771484
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "噪波生成",
+          "name": "NOISE",
+          "shape": 3,
+          "type": "NOISE",
+          "links": [
+            442
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "RandomNoise",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        316430325547060,
+        "fixed"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 165,
+      "type": "BasicGuider",
+      "pos": {
+        "0": 7251.25341796875,
+        "1": 438.2826843261719
+      },
+      "size": {
+        "0": 230.9546661376953,
+        "1": 223.48252868652344
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "模型",
+          "name": "model",
+          "type": "MODEL",
+          "link": 448
+        },
+        {
+          "label": "条件",
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 449
+        }
+      ],
+      "outputs": [
+        {
+          "label": "引导",
+          "name": "GUIDER",
+          "shape": 3,
+          "type": "GUIDER",
+          "slot_index": 0,
+          "links": [
+            443
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "BasicGuider",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 171,
+      "type": "TTP_Image_Assy",
+      "pos": {
+        "0": 8201.2578125,
+        "1": 448.2826843261719
+      },
+      "size": {
+        "0": 441.6083068847656,
+        "1": 172.61767578125
+      },
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "tiles",
+          "name": "tiles",
+          "type": "IMAGE",
+          "link": 454
+        },
+        {
+          "label": "positions",
+          "name": "positions",
+          "type": "LIST",
+          "link": 455
+        },
+        {
+          "label": "original_size",
+          "name": "original_size",
+          "type": "TUPLE",
+          "link": 456
+        },
+        {
+          "label": "grid_size",
+          "name": "grid_size",
+          "type": "TUPLE",
+          "link": 457
+        }
+      ],
+      "outputs": [
+        {
+          "label": "RECONSTRUCTED_IMAGE",
+          "name": "RECONSTRUCTED_IMAGE",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            458,
+            469
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "TTP_Image_Assy",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        128
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 175,
+      "type": "ImageUpscaleWithModel",
+      "pos": {
+        "0": 8221.2578125,
+        "1": 788.2825317382812
+      },
+      "size": {
+        "0": 430.6911315917969,
+        "1": 91.33450317382812
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "放大模型",
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 461
+        },
+        {
+          "label": "图像",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 462
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            436
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "ImageUpscaleWithModel",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 179,
+      "type": "ImageListToImageBatch",
+      "pos": {
+        "0": 8211.2578125,
+        "1": 668.2826538085938
+      },
+      "size": {
+        "0": 435.6083068847656,
+        "1": 71.41788482666016
+      },
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "图像",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 466
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            454
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "ImageListToImageBatch",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 180,
+      "type": "ImageResizeKJ",
+      "pos": {
+        "0": 7501.25341796875,
+        "1": 448.2826843261719
+      },
+      "size": {
+        "0": 320.6676940917969,
+        "1": 266
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "图像",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 467
+        },
+        {
+          "label": "参考图像",
+          "name": "get_image_size",
+          "shape": 7,
+          "type": "IMAGE"
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            462
+          ]
+        },
+        {
+          "label": "宽度",
+          "name": "width",
+          "type": "INT"
+        },
+        {
+          "label": "高度",
+          "name": "height",
+          "type": "INT"
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "ImageResizeKJ",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        "nearest-exact",
+        true,
+        2,
+        0
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 166,
+      "type": "FluxGuidance",
+      "pos": {
+        "0": 6950.42822265625,
+        "1": 850.781494140625
+      },
+      "size": {
+        "0": 257.97674560546875,
+        "1": 218.15335083007812
+      },
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "条件",
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 450
+        }
+      ],
+      "outputs": [
+        {
+          "label": "条件",
+          "name": "CONDITIONING",
+          "shape": 3,
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            449
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "FluxGuidance",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        2.5
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 173,
+      "type": "VAEEncode",
+      "pos": {
+        "0": 7244.58935546875,
+        "1": 991.6146240234375
+      },
+      "size": {
+        "0": 234.85678100585938,
+        "1": 72.18165588378906
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "图像",
+          "name": "pixels",
+          "type": "IMAGE",
+          "link": 459
+        },
+        {
+          "label": "VAE",
+          "name": "vae",
+          "type": "VAE",
+          "link": 460
+        }
+      ],
+      "outputs": [
+        {
+          "label": "Latent",
+          "name": "LATENT",
+          "shape": 3,
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            446
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "VAEEncode",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 159,
+      "type": "TTP_Image_Tile_Batch",
+      "pos": {
+        "0": 7515.42236328125,
+        "1": 900.781494140625
+      },
+      "size": {
+        "0": 304.0335388183594,
+        "1": 173.5259246826172
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 437
+        },
+        {
+          "label": "tile_width",
+          "name": "tile_width",
+          "type": "INT",
+          "widget": {
+            "name": "tile_width"
+          },
+          "link": 438
+        },
+        {
+          "label": "tile_height",
+          "name": "tile_height",
+          "type": "INT",
+          "widget": {
+            "name": "tile_height"
+          },
+          "link": 439
+        }
+      ],
+      "outputs": [
+        {
+          "label": "IMAGES",
+          "name": "IMAGES",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            465
+          ]
+        },
+        {
+          "label": "POSITIONS",
+          "name": "POSITIONS",
+          "shape": 3,
+          "type": "LIST",
+          "slot_index": 1,
+          "links": [
+            455
+          ]
+        },
+        {
+          "label": "ORIGINAL_SIZE",
+          "name": "ORIGINAL_SIZE",
+          "shape": 3,
+          "type": "TUPLE",
+          "slot_index": 2,
+          "links": [
+            456
+          ]
+        },
+        {
+          "label": "GRID_SIZE",
+          "name": "GRID_SIZE",
+          "shape": 3,
+          "type": "TUPLE",
+          "slot_index": 3,
+          "links": [
+            457
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "TTP_Image_Tile_Batch",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        1024,
+        1024
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 181,
+      "type": "Image Comparer (rgthree)",
+      "pos": {
+        "0": 7032.388671875,
+        "1": 1138.454833984375
+      },
+      "size": {
+        "0": 728.9547119140625,
+        "1": 841.0013427734375
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "dir": 3,
+          "label": "图像_A",
+          "name": "image_a",
+          "type": "IMAGE",
+          "link": 468
+        },
+        {
+          "dir": 3,
+          "label": "图像_B",
+          "name": "image_b",
+          "type": "IMAGE",
+          "link": 469
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "comparer_mode": "Slide",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "https://liblibai-tmp-image.liblib.cloud/sd-images/770e59ed879da1ed5d071e1b0c47abeed405cdc536822fd18f178e87d7a72b71.png?filename=sd-images/770e59ed879da1ed5d071e1b0c47abeed405cdc536822fd18f178e87d7a72b71.png&type=output&rand=0.30494555647208665"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "https://liblibai-tmp-image.liblib.cloud/sd-images/d617ab64a41db94c184e06e5e731255582392f8e2748ec2310d87aa4057ae874.png?filename=sd-images/d617ab64a41db94c184e06e5e731255582392f8e2748ec2310d87aa4057ae874.png&type=output&rand=0.6447757519164841"
+          }
+        ]
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 177,
+      "type": "easy imageBatchToImageList",
+      "pos": {
+        "0": 7241.25341796875,
+        "1": 718.2826538085938
+      },
+      "size": {
+        "0": 242.3730926513672,
+        "1": 234.03182983398438
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "图像",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 465
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "shape": 6,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            459,
+            471
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "easy imageBatchToImageList",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 178,
+      "type": "LoadImage",
+      "pos": {
+        "0": 6333.76220703125,
+        "1": 1135.8128662109375
+      },
+      "size": {
+        "0": 671.9141845703125,
+        "1": 846.121826171875
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            467,
+            468
+          ]
+        },
+        {
+          "label": "遮罩",
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "LoadImage",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "31e7f6a23a3a48bd47f17889473031c177b9eda71d91cac3763e58bad5773b33.png",
+        "image",
+        ""
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "_widget_cache_map": {
+        "31e7f6a23a3a48bd47f17889473031c177b9eda71d91cac3763e58bad5773b33.png": {
+          "value": "img/c84c1bdb84b44d34a34c86b9ef79aa3a/31e7f6a23a3a48bd47f17889473031c177b9eda71d91cac3763e58bad5773b33.png",
+          "name": "31e7f6a23a3a48bd47f17889473031c177b9eda71d91cac3763e58bad5773b33.png",
+          "url": "https://liblibai-tmp-image.liblib.cloud/img/c84c1bdb84b44d34a34c86b9ef79aa3a/31e7f6a23a3a48bd47f17889473031c177b9eda71d91cac3763e58bad5773b33.png",
+          "width": 1024,
+          "height": 1024
+        }
+      }
+    },
+    {
+      "id": 172,
+      "type": "SaveImage",
+      "pos": {
+        "0": 7908.3759765625,
+        "1": 1223.582275390625
+      },
+      "size": {
+        "0": 736.5843505859375,
+        "1": 849.488525390625
+      },
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "图像",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 458
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "SaveImage",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 167,
+      "type": "CheckpointLoaderSimple",
+      "pos": {
+        "0": 6331.25341796875,
+        "1": 428.2826843261719
+      },
+      "size": {
+        "0": 322.9391174316406,
+        "1": 95.37215423583984
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "模型",
+          "name": "MODEL",
+          "shape": 3,
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            447,
+            448
+          ]
+        },
+        {
+          "label": "CLIP",
+          "name": "CLIP",
+          "shape": 3,
+          "type": "CLIP",
+          "slot_index": 1,
+          "links": [
+            440
+          ]
+        },
+        {
+          "label": "VAE",
+          "name": "VAE",
+          "shape": 3,
+          "type": "VAE",
+          "slot_index": 2,
+          "links": [
+            460
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "CheckpointLoaderSimple",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 168,
+      "type": "DualCLIPLoader",
+      "pos": {
+        "0": 6331.25341796875,
+        "1": 558.2826538085938
+      },
+      "size": {
+        "0": 320.8332824707031,
+        "1": 130
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "CLIP",
+          "name": "CLIP",
+          "shape": 3,
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            464
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "DualCLIPLoader",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "t5xxl_fp8_e4m3fn",
+        "clip_l",
+        "flux",
+        "default"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 174,
+      "type": "UpscaleModelLoader",
+      "pos": {
+        "0": 8221.2578125,
+        "1": 938.282470703125
+      },
+      "size": {
+        "0": 435.2750244140625,
+        "1": 119.20208740234375
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "放大模型",
+          "name": "UPSCALE_MODEL",
+          "shape": 3,
+          "type": "UPSCALE_MODEL",
+          "slot_index": 0,
+          "links": [
+            461
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "UpscaleModelLoader",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "4x_NMKD-Siax_200k"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 184,
+      "type": "Note",
+      "pos": {
+        "0": 5825.1337890625,
+        "1": 1299.75927734375
+      },
+      "size": {
+        "0": 447.64117431640625,
+        "1": 101.1894760131836
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "👉右边直接添加图片"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 170,
+      "type": "TTP_Tile_image_size",
+      "pos": {
+        "0": 7511.25341796875,
+        "1": 728.2826538085938
+      },
+      "size": {
+        "0": 311.9649963378906,
+        "1": 126
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 453
+        }
+      ],
+      "outputs": [
+        {
+          "label": "tile_width",
+          "name": "tile_width",
+          "shape": 3,
+          "type": "INT",
+          "slot_index": 0,
+          "links": [
+            438
+          ]
+        },
+        {
+          "label": "tile_height",
+          "name": "tile_height",
+          "shape": 3,
+          "type": "INT",
+          "slot_index": 1,
+          "links": [
+            439
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "TTP_Tile_image_size",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        2,
+        3,
+        0.1
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 182,
+      "type": "Joy_caption_two",
+      "pos": {
+        "0": 6677.974609375,
+        "1": 807.6732788085938
+      },
+      "size": {
+        "0": 253.98403930664062,
+        "1": 213.26071166992188
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "joy_two_pipeline",
+          "name": "joy_two_pipeline",
+          "type": "JoyTwoPipeline",
+          "link": 470
+        },
+        {
+          "label": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 471
+        }
+      ],
+      "outputs": [
+        {
+          "label": "STRING",
+          "name": "STRING",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            441
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "Joy_caption_two",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "Descriptive",
+        "long",
+        false
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 162,
+      "type": "KSamplerSelect",
+      "pos": {
+        "0": 6331.25341796875,
+        "1": 708.2826538085938
+      },
+      "size": {
+        "0": 316.07049560546875,
+        "1": 91.50581359863281
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "采样器",
+          "name": "SAMPLER",
+          "shape": 3,
+          "type": "SAMPLER",
+          "links": [
+            444
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "KSamplerSelect",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "euler"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 160,
+      "type": "CLIPTextEncode",
+      "pos": {
+        "0": 6675.42919921875,
+        "1": 636.1679077148438
+      },
+      "size": {
+        "0": 255.66415405273438,
+        "1": 99.06999969482422
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "CLIP",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 440
+        },
+        {
+          "label": "文本",
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": 441
+        }
+      ],
+      "outputs": [
+        {
+          "label": "条件",
+          "name": "CONDITIONING",
+          "shape": 3,
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            450
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "CLIPTextEncode",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "high quality, detailed, photograph , hd, 8k , 4k , sharp, highly detailed"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 157,
+      "type": "VAELoader",
+      "pos": {
+        "0": 6331.25341796875,
+        "1": 988.282470703125
+      },
+      "size": {
+        "0": 321.3609619140625,
+        "1": 84.87356567382812
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "VAE",
+          "name": "VAE",
+          "shape": 3,
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            452,
+            460
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "VAELoader",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "ae.sft"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 163,
+      "type": "BasicScheduler",
+      "pos": {
+        "0": 6992.09228515625,
+        "1": 439.329833984375
+      },
+      "size": {
+        "0": 254.6928253173828,
+        "1": 230.06776428222656
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "模型",
+          "name": "model",
+          "type": "MODEL",
+          "link": 447
+        }
+      ],
+      "outputs": [
+        {
+          "label": "Sigmas",
+          "name": "SIGMAS",
+          "shape": 3,
+          "type": "SIGMAS",
+          "links": [
+            445
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "BasicScheduler",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "simple",
+        4,
+        0.3
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 183,
+      "type": "Joy_caption_two_load",
+      "pos": {
+        "0": 6836.34716796875,
+        "1": 706.80810546875
+      },
+      "size": {
+        "0": 521.7703857421875,
+        "1": 82.5689468383789
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "JoyTwoPipeline",
+          "name": "JoyTwoPipeline",
+          "type": "JoyTwoPipeline",
+          "links": [
+            470
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "Joy_caption_two_load",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 169,
+      "type": "VAEDecodeTiled",
+      "pos": {
+        "0": 7861.25341796875,
+        "1": 698.2826538085938
+      },
+      "size": {
+        "0": 318.4283447265625,
+        "1": 150
+      },
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "Latent",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 451
+        },
+        {
+          "label": "VAE",
+          "name": "vae",
+          "type": "VAE",
+          "link": 452
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            466
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "VAEDecodeTiled",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        1024,
+        64,
+        64,
+        8
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 158,
+      "type": "ImageScaleToTotalPixels",
+      "pos": {
+        "0": 7861.25341796875,
+        "1": 848.282470703125
+      },
+      "size": {
+        "0": 316.83148193359375,
+        "1": 217.32444763183594
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "图像",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 436
+        }
+      ],
+      "outputs": [
+        {
+          "label": "图像",
+          "name": "IMAGE",
+          "shape": 3,
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            437,
+            453
+          ]
+        }
+      ],
+      "properties": {
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "Node name for S&R": "ImageScaleToTotalPixels",
+        "ttNbgOverride": {
+          "color": "#232",
+          "bgcolor": "#353",
+          "groupcolor": "#8A8"
+        }
+      },
+      "widgets_values": [
+        "lanczos",
+        8
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    }
+  ],
+  "links": [
+    [
+      436,
+      175,
+      0,
+      158,
+      0,
+      "IMAGE"
+    ],
+    [
+      437,
+      158,
+      0,
+      159,
+      0,
+      "IMAGE"
+    ],
+    [
+      438,
+      170,
+      0,
+      159,
+      1,
+      "INT"
+    ],
+    [
+      439,
+      170,
+      1,
+      159,
+      2,
+      "INT"
+    ],
+    [
+      440,
+      176,
+      1,
+      160,
+      0,
+      "CLIP"
+    ],
+    [
+      441,
+      182,
+      0,
+      160,
+      1,
+      "STRING"
+    ],
+    [
+      442,
+      164,
+      0,
+      161,
+      0,
+      "NOISE"
+    ],
+    [
+      443,
+      165,
+      0,
+      161,
+      1,
+      "GUIDER"
+    ],
+    [
+      444,
+      162,
+      0,
+      161,
+      2,
+      "SAMPLER"
+    ],
+    [
+      445,
+      163,
+      0,
+      161,
+      3,
+      "SIGMAS"
+    ],
+    [
+      446,
+      173,
+      0,
+      161,
+      4,
+      "LATENT"
+    ],
+    [
+      447,
+      176,
+      0,
+      163,
+      0,
+      "MODEL"
+    ],
+    [
+      448,
+      176,
+      0,
+      165,
+      0,
+      "MODEL"
+    ],
+    [
+      449,
+      166,
+      0,
+      165,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      450,
+      160,
+      0,
+      166,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      451,
+      161,
+      0,
+      169,
+      0,
+      "LATENT"
+    ],
+    [
+      452,
+      157,
+      0,
+      169,
+      1,
+      "VAE"
+    ],
+    [
+      453,
+      158,
+      0,
+      170,
+      0,
+      "IMAGE"
+    ],
+    [
+      454,
+      179,
+      0,
+      171,
+      0,
+      "IMAGE"
+    ],
+    [
+      455,
+      159,
+      1,
+      171,
+      1,
+      "LIST"
+    ],
+    [
+      456,
+      159,
+      2,
+      171,
+      2,
+      "TUPLE"
+    ],
+    [
+      457,
+      159,
+      3,
+      171,
+      3,
+      "TUPLE"
+    ],
+    [
+      458,
+      171,
+      0,
+      172,
+      0,
+      "IMAGE"
+    ],
+    [
+      459,
+      177,
+      0,
+      173,
+      0,
+      "IMAGE"
+    ],
+    [
+      460,
+      157,
+      0,
+      173,
+      1,
+      "VAE"
+    ],
+    [
+      461,
+      174,
+      0,
+      175,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      462,
+      180,
+      0,
+      175,
+      1,
+      "IMAGE"
+    ],
+    [
+      463,
+      167,
+      0,
+      176,
+      0,
+      "MODEL"
+    ],
+    [
+      464,
+      168,
+      0,
+      176,
+      1,
+      "CLIP"
+    ],
+    [
+      465,
+      159,
+      0,
+      177,
+      0,
+      "IMAGE"
+    ],
+    [
+      466,
+      169,
+      0,
+      179,
+      0,
+      "IMAGE"
+    ],
+    [
+      467,
+      178,
+      0,
+      180,
+      0,
+      "IMAGE"
+    ],
+    [
+      468,
+      178,
+      0,
+      181,
+      0,
+      "IMAGE"
+    ],
+    [
+      469,
+      171,
+      0,
+      181,
+      1,
+      "IMAGE"
+    ],
+    [
+      470,
+      183,
+      0,
+      182,
+      0,
+      "JoyTwoPipeline"
+    ],
+    [
+      471,
+      177,
+      0,
+      182,
+      1,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 4,
+      "title": "FLUX  TTP  高清放大",
+      "bounding": [
+        6262.41845703125,
+        -61.751625061035156,
+        2762,
+        2353
+      ],
+      "color": "#3f789e",
+      "font_size": 200,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.45000000000000023,
+      "offset": [
+        -4986.615819358357,
+        -49.53996939990912
+      ]
+    },
+    "VHS_KeepIntermediate": true,
+    "links_added_by_ue": [],
+    "ue_links": [],
+    "VHS_MetadataImage": true,
+    "0246.VERSION": [
+      0,
+      0,
+      4
+    ],
+    "VHS_latentpreviewrate": 0,
+    "VHS_latentpreview": false
+  },
+  "version": 0.4
+}

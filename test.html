@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArchVisualizer - 智能建筑设计可视化工具</title>
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF', // 建筑蓝：沉稳专业
+                        secondary: '#166534', // 生态绿：贴近建筑与环境
+                        accent: '#7C3AED', // 创意紫：激发设计灵感
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #1E40AF 0%, #7C3AED 100%);
+            }
+            .card-elevation {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+            }
+            .hover-lift {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .hover-lift:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .feature-checkbox:checked + span {
+                color: #1E40AF;
+                font-weight: 500;
+            }
+            .feature-checkbox:checked + span + i {
+                color: #1E40AF;
+            }
+            .workflow-tag {
+                transition: all 0.2s ease;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="index.html" class="flex items-center space-x-2 group">
+                    <i class="fa-solid fa-building text-primary text-2xl group-hover:scale-105 transition-transform"></i>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">ArchVisualizer</span>
+                </a>
+                <div class="flex items-center space-x-1 md:space-x-4 text-sm font-medium">
+                    <a href="index.html" class="px-3 py-2 rounded-md text-gray-600 hover:text-primary hover:bg-primary/5 transition-all">
+                        <i class="fa-solid fa-pen-to-square mr-1.5"></i>文本生图
+                    </a>
+                    <a href="test.html" class="px-3 py-2 rounded-md text-primary bg-primary/10 border-b-2 border-primary transition-all">
+                        <i class="fa-solid fa-sliders mr-1.5"></i>更多功能
+                    </a>
+                    <div id="comfyui-status" class="flex items-center space-x-2 px-3 py-2">
+                        <div class="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
+                        <span class="text-gray-500 text-sm">ComfyUI: 检测中...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main>
+        <!-- 英雄区域 -->
+        <section class="py-12 md:py-20 bg-gradient-to-b from-light to-gray-100">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-gray-900 mb-4 leading-tight">
+                        智能建筑设计，<br class="md:hidden">一键实现创意可视化
+                    </h1>
+                    <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-600 max-w-2xl mx-auto">
+                        上传设计图，添加创意提示，选择所需功能，自动匹配ComfyUI工作流，快速生成专业设计效果
+                    </p>
+                </div>
+                
+                <!-- 核心功能区：图片上传+提示词+ComfyUI工作流匹配 -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 max-w-3xl mx-auto transform transition-all hover:shadow-2xl">
+                    <form id="design-form" class="space-y-6">
+                        <!-- 1. 设计提示词输入 -->
+                        <div>
+                            <label for="prompt" class="block text-sm font-medium text-gray-700 mb-2">
+                                设计提示词 <span class="text-gray-500 text-xs">(例如：现代简约风格毛胚房，自然光+浅木色地板+白色墙面)</span>
+                            </label>
+                            <textarea id="prompt" rows="3" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                placeholder="请描述建筑设计风格、材质、光影需求..."></textarea>
+                        </div>
+                        
+                        <!-- 2. 设计图上传区域 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                上传设计图 <span class="text-gray-500 text-xs">(支持户型图/白膜图/草图，JPG/PNG格式，最大10MB)</span>
+                            </label>
+                            <div id="image-upload-area" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer bg-gray-50 group">
+                                <input type="file" id="image-upload" accept="image/*" class="hidden" required>
+                                <div class="space-y-2">
+                                    <i class="fa-solid fa-file-image text-4xl text-gray-400 group-hover:text-primary transition-colors"></i>
+                                    <p id="upload-text" class="text-gray-600">点击或拖拽设计图到此处上传</p>
+                                    <p id="file-name" class="text-primary font-medium hidden"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 页面切换：文本生图 / 更多功能 -->
+                        <!-- 已移除文本生图/更多功能切换，改为单页更多功能 -->
+                        <!-- 3. 功能选项（关联ComfyUI工作流） -->
+                        <div id="more-features-section">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="block text-sm font-medium text-gray-700">更多功能 <span class="text-primary">(自动匹配ComfyUI工作流)</span></label>
+                                <span id="workflow-count" class="text-xs text-gray-500">已选择: 0 个工作流</span>
+                            </div>
+                            
+                            <!-- 功能选项网格（每个选项绑定对应的ComfyUI工作流ID/路径） -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                                <!-- 功能1：毛胚房生成 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" 
+                                        data-workflow="comfyui_workflows/arch_rough_to_finish.json" 
+                                        data-workflow-name="毛胚房生成工作流">
+                                    <span class="ml-2 text-sm text-gray-700">毛胚房生成</span>
+                                    <i class="fa-solid fa-house ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                                
+                                <!-- 功能2：白膜出图 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        data-workflow="comfyui_workflows/arch_wireframe_render.json"
+                                        data-workflow-name="白膜渲染工作流">
+                                    <span class="ml-2 text-sm text-gray-700">白膜出图</span>
+                                    <i class="fa-solid fa-cube ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                                
+                                <!-- 功能3：局部重绘 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        data-workflow="comfyui_workflows/arch_local_redraw.json"
+                                        data-workflow-name="局部重绘工作流">
+                                    <span class="ml-2 text-sm text-gray-700">局部重绘</span>
+                                    <i class="fa-solid fa-paintbrush ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                                
+                                <!-- 功能4：一键抠图 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        data-workflow="comfyui_workflows/arch_one_click_mask.json"
+                                        data-workflow-name="一键抠图工作流">
+                                    <span class="ml-2 text-sm text-gray-700">一键抠图</span>
+                                    <i class="fa-solid fa-scissors ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                                
+                                <!-- 功能5：风格改变 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        data-workflow="comfyui_workflows/arch_style_transfer.json"
+                                        data-workflow-name="风格迁移工作流">
+                                    <span class="ml-2 text-sm text-gray-700">风格改变</span>
+                                    <i class="fa-solid fa-palette ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                                
+                                <!-- 功能6：添加/移除/修改 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        data-workflow="comfyui_workflows/arch_element_edit.json"
+                                        data-workflow-name="元素编辑工作流">
+                                    <span class="ml-2 text-sm text-gray-700">添加/移除/修改</span>
+                                    <i class="fa-solid fa-pen-to-square ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                                
+                                <!-- 功能7：高清放大 -->
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors sm:col-span-2 lg:col-span-1">
+                                    <input type="checkbox" class="feature-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                        data-workflow="comfyui_workflows/arch_upscale_hd.json"
+                                        data-workflow-name="高清放大工作流">
+                                    <span class="ml-2 text-sm text-gray-700">高清放大</span>
+                                    <i class="fa-solid fa-search-plus ml-auto text-gray-400 transition-colors"></i>
+                                </label>
+                            </div>
+                            
+                            <!-- 已选ComfyUI工作流预览（实时更新） -->
+                            <div id="selected-workflows" class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-xs text-gray-500">已匹配的ComfyUI工作流：</p>
+                                    <a href="index.html" class="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition">文本生图</a>
+                                </div>
+                                <div id="workflow-tags" class="flex flex-wrap gap-2">
+                                    <span class="text-xs text-gray-400">未选择任何功能</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 4. 生成按钮 -->
+                        <button type="button" id="generate-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2">
+                            <span>启动ComfyUI工作流生成</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- 设计结果预览区 (默认隐藏) -->
+                <div id="result-area" class="mt-12 hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-6 max-w-4xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">设计效果对比</h3>
+                            <span id="used-workflow-info" class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                使用工作流：未选择
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 mb-2">原始设计图</p>
+                                <div id="original-image" class="bg-gray-100 rounded-lg overflow-hidden h-64 flex items-center justify-center">
+                                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>原始户型图</text></svg>" alt="原始户型图" class="w-full h-auto" loading="lazy" decoding="async">
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 mb-2">ComfyUI生成效果图</p>
+                                <div id="generated-image" class="bg-gray-100 rounded-lg overflow-hidden h-64 flex items-center justify-center relative">
+                                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white/80 hidden">
+                                        <i class="fa-solid fa-spinner fa-spin text-primary text-2xl"></i>
+                                    </div>
+                                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>生成的毛胚房效果</text></svg>" alt="生成的毛胚房效果" class="w-full h-auto" loading="lazy" decoding="async">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex flex-wrap justify-center gap-4">
+                            <button class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fa-solid fa-download mr-1"></i> 下载原图
+                            </button>
+                            <button class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors">
+                                <i class="fa-solid fa-download mr-1"></i> 下载效果图
+                            </button>
+                            <button id="retry-btn" class="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">
+                                <i class="fa-solid fa-refresh mr-1"></i> 重新生成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 功能区域（补充ComfyUI工作流说明） -->
+        <section id="features" class="py-16 bg-white">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-gray-900 mb-4">专业建筑设计功能 + ComfyUI工作流</h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">每个功能对应预配置的ComfyUI优化工作流，无需手动调整参数，一键启动专业渲染</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- 功能1 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-house text-primary text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">毛胚房生成</h3>
+                        <p class="text-gray-600 mb-3">将二维户型图转换为三维毛胚房效果，保留精确尺寸和空间结构。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：<br>arch_rough_to_finish.json</p>
+                    </div>
+                    
+                    <!-- 功能2 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-cube text-accent text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">白膜出图</h3>
+                        <p class="text-gray-600 mb-3">为建筑3D白膜添加基础材质、光影和环境效果，快速生成真实感方案。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：<br>arch_wireframe_render.json</p>
+                    </div>
+                    
+                    <!-- 功能3 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-paintbrush text-secondary text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">局部重绘</h3>
+                        <p class="text-gray-600 mb-3">精准修改建筑细节（门窗/墙面/家具），保持整体设计风格统一。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：<br>arch_local_redraw.json</p>
+                    </div>
+                    
+                    <!-- 功能4 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation">
+                        <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-scissors text-amber-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">一键抠图</h3>
+                        <p class="text-gray-600 mb-3">智能提取建筑主体，去除背景干扰，便于嵌入不同展示场景。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：<br>arch_one_click_mask.json</p>
+                    </div>
+                    
+                    <!-- 功能5 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-palette text-red-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">风格改变</h3>
+                        <p class="text-gray-600 mb-3">转换为现代/新中式/工业风等风格，快速对比多种设计方向。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：<br>arch_style_transfer.json</p>
+                    </div>
+                    
+                    <!-- 功能6 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation">
+                        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-pen-to-square text-indigo-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">添加/移除/修改</h3>
+                        <p class="text-gray-600 mb-3">灵活编辑建筑元素（绿植/家具/材质），快速迭代设计方案。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：<br>arch_element_edit.json</p>
+                    </div>
+                    
+                    <!-- 功能7 -->
+                    <div class="bg-gray-50 rounded-xl p-6 hover-lift card-elevation lg:col-span-3">
+                        <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-search-plus text-teal-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-900">高清放大</h3>
+                        <p class="text-gray-600 mb-3">提升设计图分辨率，保留细节清晰度，满足汇报/印刷等高精度需求。</p>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-cogs mr-1"></i> 匹配ComfyUI工作流：arch_upscale_hd.json | 核心参数：4倍放大+细节修复+边缘优化</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 设计案例展示 -->
+        <section id="examples" class="py-16 bg-gray-50">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-gray-900 mb-4">建筑设计案例 + ComfyUI工作流</h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">展示各功能对应的ComfyUI工作流实际渲染效果</p>
+                </div>
+                
+                <div class="space-y-12">
+                    <!-- 案例1：毛胚房生成 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-gray-700">毛胚房生成效果</p>
+                                <p class="text-sm text-gray-500">提示词：现代简约风格毛胚房，浅木色地板+白色墙面+自然光</p>
+                            </div>
+                            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                工作流：arch_rough_to_finish.json
+                            </span>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-2">原始户型图</p>
+                                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>原始户型图</text></svg>" alt="原始户型图" class="w-full h-auto" loading="lazy" decoding="async">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-2">ComfyUI生成毛胚房效果</p>
+                                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>生成的毛胚房效果</text></svg>" alt="生成的毛胚房效果" class="w-full h-auto" loading="lazy" decoding="async">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 案例2：白膜出图 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-gray-700">白膜出图效果</p>
+                                <p class="text-sm text-gray-500">提示词：建筑白膜添加玻璃幕墙+石材外墙+庭院绿植+白天光影</p>
+                            </div>
+                            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                工作流：arch_wireframe_render.json
+                            </span>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-2">原始3D白膜</p>
+                                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>原始3D白膜</text></svg>" alt="原始3D白膜" class="w-full h-auto" loading="lazy" decoding="async">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-2">ComfyUI渲染后效果</p>
+                                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>渲染后效果</text></svg>" alt="渲染后效果" class="w-full h-auto" loading="lazy" decoding="async">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 案例3：高清放大 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-gray-700">高清放大效果</p>
+                                <p class="text-sm text-gray-500">提示词：4倍放大设计草图，保留线条细节+修复模糊边缘</p>
+                            </div>
+                            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                工作流：arch_upscale_hd.json
+                            </span>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-2">原始设计草图（低清）</p>
+                                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='150'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='14'>原始设计草图</text></svg>" alt="原始设计草图" class="w-full h-auto" loading="lazy" decoding="async">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-2">ComfyUI高清放大后</p>
+                                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-family='Inter,system-ui,sans-serif' font-size='20'>高清放大后</text></svg>" alt="高清放大后" class="w-full h-auto" loading="lazy" decoding="async">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 常见问题 -->
+        <section id="faq" class="py-16 bg-white">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-gray-900 mb-4">ComfyUI工作流常见问题</h2>
+                    <p class="text-gray-600">了解功能与工作流匹配的详细说明</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- FAQ 1 -->
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <button class="faq-toggle w-full flex justify-between items-center p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <span>勾选多个功能时，ComfyUI工作流会如何运行？</span>
+                            <i class="fa-solid fa-chevron-down text-primary transition-transform"></i>
+                        </button>
+                        <div class="faq-content p-4 bg-white text-gray-600 hidden">
+                            系统会自动按逻辑顺序串联运行多个工作流（例如：先“局部重绘”再“高清放大”），并优化参数衔接。若存在冲突功能（如同时勾选“风格改变”和“白膜出图”），会弹出提示让您选择优先运行的工作流。
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ 2 -->
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <button class="faq-toggle w-full flex justify-between items-center p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <span>能否自定义ComfyUI工作流的参数？</span>
+                            <i class="fa-solid fa-chevron-down text-primary transition-transform"></i>
+                        </button>
+                        <div class="faq-content p-4 bg-white text-gray-600 hidden">
+                            目前基础版默认使用预优化参数的工作流，专业版支持点击“工作流名称”进入参数编辑界面，可调整渲染精度、材质库、光影强度等核心参数，并保存为自定义工作流。
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ 3 -->
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <button class="faq-toggle w-full flex justify-between items-center p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <span>ComfyUI工作流运行失败如何排查？</span>
+                            <i class="fa-solid fa-chevron-down text-primary transition-transform"></i>
+                        </button>
+                        <div class="faq-content p-4 bg-white text-gray-600 hidden">
+                            1. 检查设计图格式是否支持（推荐PNG格式，分辨率≥500×500）；2. 确认勾选的功能是否与设计图类型匹配（如“毛胚房生成”需上传户型图）；3. 查看页面底部“工作流日志”获取具体错误信息，或点击“重试”按钮自动修复参数。
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ 4 -->
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <button class="faq-toggle w-full flex justify-between items-center p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <span>生成效果图后，能否查看使用的ComfyUI工作流详情？</span>
+                            <i class="fa-solid fa-chevron-down text-primary transition-transform"></i>
+                        </button>
+                        <div class="faq-content p-4 bg-white text-gray-600 hidden">
+                            可以。生成结果区域的“使用工作流”标签点击后，会显示完整的工作流路径、运行参数（如渲染时长、分辨率）和节点配置图，支持导出工作流JSON文件用于本地ComfyUI复现。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-gray-300 py-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-1">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fa-solid fa-building text-primary text-2xl"></i>
+                        <span class="text-xl font-bold text-white">ArchVisualizer</span>
+                    </div>
+                    <p class="text-sm text-gray-400">
+                        建筑设计+ComfyUI工作流自动匹配，加速创意落地
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="text-white font-medium mb-4">核心功能</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">毛胚房生成</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">白膜出图</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">局部重绘</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">高清放大</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-white font-medium mb-4">ComfyUI资源</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">工作流库</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">参数配置指南</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">本地部署教程</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">自定义节点</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-white font-medium mb-4">关于我们</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">团队介绍</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">联系我们</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">隐私政策</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">服务条款</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-12 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+                <p>© 2023 ArchVisualizer. 建筑设计+ComfyUI工作流智能匹配工具</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript 核心逻辑：功能勾选与ComfyUI工作流关联 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. 核心变量定义
+            const featureCheckboxes = document.querySelectorAll('.feature-checkbox');
+            const workflowTags = document.getElementById('workflow-tags');
+            const workflowCount = document.getElementById('workflow-count');
+            const selectedWorkflows = [{ path: 'comfyui_workflows/arch_test_hd.json', name: 'arch_test_hd' }]; // 默认工作流
+            const generateBtn = document.getElementById('generate-btn');
+            const retryBtn = document.getElementById('retry-btn');
+            const resultArea = document.getElementById('result-area');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const usedWorkflowInfo = document.getElementById('used-workflow-info');
+            const originalImage = document.getElementById('original-image').querySelector('img');
+            const generatedImage = document.getElementById('generated-image').querySelector('img');
+            const imageUpload = document.getElementById('image-upload');
+            const uploadText = document.getElementById('upload-text');
+            const fileName = document.getElementById('file-name');
+            const promptInput = document.getElementById('prompt');
+            const apiBase = `${location.protocol}//${location.hostname}:3000`;
+
+            // ComfyUI 连接状态检测
+            const statusBox = document.getElementById('comfyui-status');
+            const statusDot = statusBox.querySelector('div');
+            const statusText = statusBox.querySelector('span');
+            (async function checkComfyStatus() {
+                try {
+                    const res = await fetch(`${apiBase}/comfyui/status`, { cache: 'no-cache' });
+                    let data;
+                    try { data = await res.json(); } catch (_) { data = null; }
+                    if (res.ok && data && data.connected) {
+                        statusDot.classList.remove('bg-gray-400','animate-pulse');
+                        statusDot.classList.add('bg-green-500');
+                        statusText.textContent = `ComfyUI: 已连接 (${data.version})`;
+                    } else {
+                        statusDot.classList.remove('bg-gray-400');
+                        statusDot.classList.add('bg-red-500');
+                        statusText.textContent = 'ComfyUI: 未连接';
+                    }
+                } catch (err) {
+                    statusDot.classList.remove('bg-gray-400');
+                    statusDot.classList.add('bg-red-500');
+                    statusText.textContent = 'ComfyUI: 未连接';
+                }
+            })();
+
+            // 2. 功能勾选事件：实时更新已选ComfyUI工作流
+            featureCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const workflowPath = this.getAttribute('data-workflow');
+                    const workflowName = this.getAttribute('data-workflow-name');
+                    
+                    // 勾选：添加工作流
+                    if (this.checked) {
+                        selectedWorkflows.push({
+                            path: workflowPath,
+                            name: workflowName
+                        });
+                    } 
+                    // 取消勾选：移除工作流
+                    else {
+                        const index = selectedWorkflows.findIndex(item => item.path === workflowPath);
+                        if (index !== -1) {
+                            selectedWorkflows.splice(index, 1);
+                        }
+                    }
+                    
+                    // 更新UI显示
+                    updateWorkflowDisplay();
+                });
+            });
+
+            // 3. 更新已选工作流UI显示
+            function updateWorkflowDisplay() {
+                // 更新计数
+                workflowCount.textContent = `已选择: ${selectedWorkflows.length} 个工作流`;
+                
+                // 清空现有标签
+                workflowTags.innerHTML = '';
+                
+                // 无选择时显示提示
+                if (selectedWorkflows.length === 0) {
+                    workflowTags.innerHTML = '<span class="text-xs text-gray-400">未选择任何功能</span>';
+                    return;
+                }
+                
+                // 生成工作流标签
+                selectedWorkflows.forEach((workflow, index) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'workflow-tag text-xs bg-primary/10 text-primary px-2 py-1 rounded flex items-center';
+                    tag.innerHTML = `${workflow.name} 
+                        <button class="ml-1 text-primary/70 hover:text-primary" data-index="${index}">
+                            <i class="fa-solid fa-times text-xs"></i>
+                        </button>`;
+                    workflowTags.appendChild(tag);
+                    
+                    // 标签内删除按钮事件
+                    tag.querySelector('button').addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        const workflowPath = selectedWorkflows[index].path;
+                        
+                        // 取消对应checkbox勾选
+                        featureCheckboxes.forEach(checkbox => {
+                            if (checkbox.getAttribute('data-workflow') === workflowPath) {
+                                checkbox.checked = false;
+                            }
+                        });
+                        
+                        // 移除工作流
+                        selectedWorkflows.splice(index, 1);
+                        
+                        // 更新UI
+                        updateWorkflowDisplay();
+                    });
+                });
+            }
+
+            // 初始化：默认选中“文本生图”并隐藏“更多功能”区块
+            // 已移除文本生图/更多功能切换事件；默认显示更多功能区域
+            // 初始化默认工作流标签显示
+            updateWorkflowDisplay();
+
+            // 4. 图片上传预览
+            const uploadArea = document.getElementById('image-upload-area');
+            uploadArea.addEventListener('click', function() {
+                imageUpload.click();
+            });
+
+            imageUpload.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    uploadText.classList.add('hidden');
+                    fileName.textContent = `已上传: ${file.name}`;
+                    fileName.classList.remove('hidden');
+                    
+                    // 预览原始图片
+                    const reader = new FileReader();
+
+                    reader.onload = async function(e) {
+                        originalImage.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // 5. 生成按钮：调用ComfyUI工作流
+            generateBtn.addEventListener('click', async function() {
+                // 验证前置条件
+                if (!imageUpload.files.length) {
+                    alert('请先上传建筑设计图');
+                    return;
+                }
+                if (selectedWorkflows.length === 0) {
+                    alert('请至少选择一个设计功能（自动匹配ComfyUI工作流）');
+                    return;
+                }
+                if (!promptInput.value.trim()) {
+                    if (!confirm('未输入设计提示词，是否使用默认提示词运行工作流？')) {
+                        return;
+                    }
+                }
+
+                // 显示结果区域和加载状态
+                resultArea.classList.remove('hidden');
+                loadingSpinner.classList.remove('hidden');
+                generatedImage.src = '';
+                // 禁用按钮避免重复点击
+                generateBtn.setAttribute('disabled', 'disabled');
+            
+                // 滚动到结果区域
+                resultArea.scrollIntoView({ behavior: 'smooth' });
+                
+                // 显示使用的工作流信息
+                const workflowNames = selectedWorkflows.map(wf => wf.name).join(' → ');
+                usedWorkflowInfo.textContent = `使用工作流：${workflowNames}`;
+            
+                // 读取上传的图片文件并在回调中处理网络请求
+                const imageFile = imageUpload.files[0];
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        // 工具：从路径提取工作流名称（去目录与后缀）
+                        function getWorkflowNameFromPath(p) {
+                            const last = p.split(/[\\\/]/).pop();
+                            return last.replace(/\.json$/i, '');
+                        }
+                        // 调用后端ComfyUI服务
+                        const wfName = getWorkflowNameFromPath(selectedWorkflows[0].path);
+                        // 校验当前工作流是否存在
+                        try {
+                            const validateResp = await fetch(`${apiBase}/comfyui/workflow/validate?name=${encodeURIComponent(wfName)}&path=${encodeURIComponent(selectedWorkflows[0].path)}`);
+                            const validation = await validateResp.json();
+                            if (!validation.exists) {
+                                throw new Error(`工作流模板不存在：${wfName}`);
+                            }
+                        } catch (err) {
+                            throw new Error(`工作流检测失败：${err.message}`);
+                        }
+                        const response = await fetch(`${apiBase}/comfyui/generate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                prompt: promptInput.value.trim() || '默认建筑设计风格，高清细节，自然光影',
+                                designImage: e.target.result,
+                                workflow: wfName,
+                                workflowName: wfName,
+                                workflowPath: selectedWorkflows[0].path
+                            })
+                        });
+                        let result;
+                        try {
+                            result = await response.json();
+                        } catch (e) {
+                            const text = await response.text();
+                            throw new Error(`API响应不是JSON：${e.message}；body: ${text.slice(0,200)}`);
+                        }
+                        if (!response.ok || !result.success) {
+                            throw new Error(result && result.message ? result.message : `HTTP ${response.status}`);
+                        }
+                        // 显示生成的结果图片
+                        if (result.data.generatedImages && result.data.generatedImages.length > 0) {
+                            generatedImage.src = result.data.generatedImages[0].url;
+                            generatedImage.alt = 'ComfyUI高清放大结果';
+                            usedWorkflowInfo.textContent = `使用工作流：${workflowNames} | 执行时间：${Math.round(result.data.executionTime/1000)}秒`;
+                        } else {
+                            throw new Error('未生成图片结果');
+                        }
+                    } catch (error) {
+                        console.error('ComfyUI调用失败:', error);
+                        alert(`ComfyUI工作流执行失败: ${error.message}`);
+                    } finally {
+                        loadingSpinner.classList.add('hidden');
+                        generateBtn.removeAttribute('disabled');
+                    }
+                };
+                try {
+                    reader.readAsDataURL(imageFile);
+                } catch (error) {
+                    console.error('读取图片失败:', error);
+                    alert(`读取图片失败: ${error.message}`);
+                    loadingSpinner.classList.add('hidden');
+                    generateBtn.removeAttribute('disabled');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
