@@ -5,8 +5,6 @@
   ],
   "rewrites": [
     { "source": "/", "destination": "/test.html" },
-    { "source": "/(index|test|more).html", "destination": "/:path" },
-    { "source": "/comfyui/:path*", "destination": "/app.js" },
-    { "source": "/:file*\\.(css|js|png|jpg|jpeg|gif|svg)", "destination": "/:file*" }
+    { "source": "/comfyui/:match*", "destination": "/app.js" }
   ]
 }
