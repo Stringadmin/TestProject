@@ -26,6 +26,12 @@ app.use(express.static(__dirname));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
+app.get('/test.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test.html'));
+});
+app.get('/more.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'more.html'));
+});
 
 // 路由
 app.use('/', upload.single('file'), indexRouter);
