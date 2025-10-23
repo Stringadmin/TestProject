@@ -3,10 +3,10 @@
   "builds": [
     { "src": "app.js", "use": "@vercel/node" }
   ],
-  "routes": [
-    { "src": "/", "dest": "/test.html" },
-    { "src": "/comfyui/(.*)", "dest": "app.js" },
-    { "src": "/(index\\.html|test\\.html|more\\.html)$", "dest": "/$1" },
-    { "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg))$", "dest": "/$1" }
+  "rewrites": [
+    { "source": "/", "destination": "/test.html" },
+    { "source": "/(index|test|more).html", "destination": "/:path" },
+    { "source": "/comfyui/:path*", "destination": "/app.js" },
+    { "source": "/:file*\\.(css|js|png|jpg|jpeg|gif|svg)", "destination": "/:file*" }
   ]
 }
