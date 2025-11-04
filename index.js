@@ -29,7 +29,12 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-// 启动服务器
-app.listen(config.port, () => {
-  console.log(`Server running on port ${config.port}`);
-});
+// 导出app以便在Vercel等无服务器环境中使用
+module.exports = app;
+
+// 仅在直接运行此文件时启动服务器（本地开发时）
+if (require.main === module) {
+  app.listen(config.port || process.env.PORT || 3000, () => {
+    console.log(`Server running on port ${config.port || process.env.PORT || 3000}`);
+  });
+}
