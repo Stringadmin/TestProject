@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const config = require('./config');
+const services = require('./services');
 const app = express();
 
 // 中间件
@@ -13,10 +14,8 @@ app.use(express.urlencoded({ extended: true })); // URL编码请求体解析
 const routes = require('./routes');
 app.use('/', routes);
 
-// 前端页面：将 test.html 作为首页
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'test.html'));
-});
+// 注册图像代理路由
+services.setupImageProxy(app);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
