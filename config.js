@@ -7,7 +7,7 @@ module.exports = {
   },
   jwtSecret: 'your-secret-key',
   comfyUI: {
-    apiUrl: process.env.COMFYUI_API_URL || 'http://127.0.0.1:8188',
+    apiUrl: process.env.COMFYUI_API_URL || 'https://comfyui.oopshub.cn',
     timeout: process.env.COMFYUI_TIMEOUT || 180000,
     workflowDir: process.env.COMFYUI_WORKFLOW_DIR || 'comfyui_workflows'
   }

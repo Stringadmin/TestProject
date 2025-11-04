@@ -572,7 +572,7 @@
             const uploadText = document.getElementById('upload-text');
             const fileName = document.getElementById('file-name');
             const promptInput = document.getElementById('prompt');
-            const apiBase = 'https://api.fanghezi.top';
+            const apiBase = ''; // 使用相对路径，自动适配Vercel部署
 
             // ComfyUI 连接状态检测
             const statusBox = document.getElementById('comfyui-status');
@@ -580,7 +580,7 @@
             const statusText = statusBox.querySelector('span');
             (async function checkComfyStatus() {
                 try {
-                    const res = await fetch(`${apiBase}/comfyui/status`, { cache: 'no-cache' });
+                    const res = await fetch(`${apiBase}/api/comfyui/status`, { cache: 'no-cache' });
                     let data;
                     try { data = await res.json(); } catch (_) { data = null; }
                     if (res.ok && data && data.connected) {
@@ -743,7 +743,7 @@
                         const wfName = getWorkflowNameFromPath(selectedWorkflows[0].path);
                         // 校验当前工作流是否存在
                         try {
-                            const validateResp = await fetch(`${apiBase}/comfyui/workflow/validate?name=${encodeURIComponent(wfName)}&path=${encodeURIComponent(selectedWorkflows[0].path)}`);
+                            const validateResp = await fetch(`${apiBase}/api/comfyui/workflow/validate?name=${encodeURIComponent(wfName)}&path=${encodeURIComponent(selectedWorkflows[0].path)}`);
                             const validation = await validateResp.json();
                             if (!validation.exists) {
                                 throw new Error(`工作流模板不存在：${wfName}`);
@@ -751,7 +751,7 @@
                         } catch (err) {
                             throw new Error(`工作流检测失败：${err.message}`);
                         }
-                        const response = await fetch(`${apiBase}/comfyui/generate`, {
+                        const response = await fetch(`${apiBase}/api/comfyui/generate`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
