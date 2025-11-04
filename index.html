@@ -120,10 +120,16 @@
           <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
         </button>
 
-        <!-- 工作流信息 -->
-        <div class="text-xs text-gray-500 flex items-center justify-center pt-1">
-          <i class="fa-solid fa-cogs mr-1.5"></i>
-          当前使用工作流：<span class="text-primary font-medium ml-1">test.json</span>
+        <!-- 工作流信息和连接状态 -->
+        <div class="text-xs text-gray-500 flex items-center justify-center pt-1 gap-6">
+          <div class="flex items-center">
+            <i class="fa-solid fa-cogs mr-1.5"></i>
+            当前使用工作流：<span class="text-primary font-medium ml-1">test.json</span>
+          </div>
+          <div class="flex items-center" id="comfyui-status">
+            <i class="fa-solid fa-server mr-1.5"></i>
+            <span>ComfyUI 连接状态: <span class="font-medium" id="status-text">检查中...</span></span>
+          </div>
         </div>
       </div>
 
@@ -180,6 +186,35 @@
     const resultImg = document.getElementById('res');
     const loadingPlaceholder = document.getElementById('loading-placeholder');
     const examplePrompts = document.querySelectorAll('.example-prompt');
+    const statusText = document.getElementById('status-text');
+    
+    // 检查ComfyUI连接状态并显示
+    async function checkComfyUIConnection() {
+      try {
+        const response = await fetch(`${api}/comfyui/status`, {
+          method: 'GET',
+          timeout: 5000
+        });
+        const data = await response.json();
+        
+        if (data.connected) {
+          statusText.textContent = '已连接';
+          statusText.className = 'font-medium text-green-600';
+        } else {
+          statusText.textContent = '未连接';
+          statusText.className = 'font-medium text-red-600';
+        }
+      } catch (error) {
+        statusText.textContent = '连接失败';
+        statusText.className = 'font-medium text-red-600';
+        console.error('检查ComfyUI连接失败:', error);
+      }
+    }
+    
+    // 页面加载时立即检查连接状态
+    checkComfyUIConnection();
+    // 每30秒自动更新连接状态
+    setInterval(checkComfyUIConnection, 30000);
 
     // 示例提示词点击填充
     examplePrompts.forEach(example => {
