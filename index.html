@@ -179,7 +179,7 @@
   </footer>
 
   <script>
-    const api = '';
+    // API基础路径 - 在本地开发环境中使用根路径
     const genBtn = document.getElementById('gen');
     const promptInput = document.getElementById('prompt');
     const resultBox = document.getElementById('box');
@@ -191,10 +191,22 @@
     // 检查ComfyUI连接状态并显示
     async function checkComfyUIConnection() {
       try {
-        const response = await fetch(`${api}/comfyui/status`, {
+        // 使用AbortController实现超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        // 直接使用相对路径，不再依赖api变量
+        const response = await fetch('/comfyui/status', {
           method: 'GET',
-          timeout: 5000
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.connected) {
@@ -251,7 +263,7 @@
         const clientTimeout = setTimeout(() => controller.abort(), 120000);
 
         // Step1: 提交任务，获取 promptId（短请求）
-        const submitRes = await fetch(`${api}/comfyui/submit`, {
+        const submitRes = await fetch('/comfyui/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -278,7 +290,7 @@
           await new Promise(r => setTimeout(r, POLL_INTERVAL));
           const rController = new AbortController();
           const rTimeout = setTimeout(() => rController.abort(), 10000);
-          const resultRes = await fetch(`${api}/comfyui/result?promptId=${encodeURIComponent(promptId)}`, {
+          const resultRes = await fetch(`/comfyui/result?promptId=${encodeURIComponent(promptId)}`, {
             method: 'GET',
             signal: rController.signal
           });

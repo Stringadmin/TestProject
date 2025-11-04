@@ -40,7 +40,7 @@ const logger = {
 
 // ComfyUI配置 - 从config.js获取
 const COMFYUI_CONFIG = {
-    API_URL: config.comfyUI.apiUrl,
+    API_URL: (config.comfyUI.apiUrl || '').trim(), // 初始化时就去除空格
     PROMPT_ENDPOINT: 'prompt',
     UPLOAD_ENDPOINT: 'upload/image',
     HISTORY_ENDPOINT: 'history',
@@ -50,10 +50,12 @@ const COMFYUI_CONFIG = {
 
 // 检查ComfyUI连接状态 (增强版本)
 exports.checkComfyUIConnection = async () => {
-    // 检查缓存
-    const now = Date.now();
-    if (connectionCache.status && now - connectionCache.lastCheck < connectionCache.expireTime) {
-        return connectionCache.status;
+    // 强制清除缓存，确保使用最新的URL处理
+    connectionCache.status = null;
+    
+    // 确保COMFYUI_CONFIG.API_URL不包含空格
+    if (COMFYUI_CONFIG.API_URL) {
+        COMFYUI_CONFIG.API_URL = COMFYUI_CONFIG.API_URL.trim();
     }
 
     try {
@@ -119,7 +121,7 @@ exports.checkComfyUIConnection = async () => {
             version: version,
             status: 'running',
             httpStatus: response.status,
-            url: attemptUrl,
+            url: attemptUrl.trim(), // 去除URL两端的空格
             timestamp: new Date().toISOString()
         };
         
@@ -142,7 +144,7 @@ exports.checkComfyUIConnection = async () => {
             error: `无法连接到ComfyUI服务: ${error.message}`,
             status: 'disconnected',
             errorCode: error.code,
-            url: COMFYUI_CONFIG.API_URL,
+            url: COMFYUI_CONFIG.API_URL.trim(), // 去除URL两端的空格
             timestamp: new Date().toISOString()
         };
         
@@ -163,8 +165,12 @@ exports.uploadImageToComfyUI = async (imageBuffer, filename) => {
             contentType: 'image/jpeg'
         });
 
+        // 使用更安全的URL拼接方法
+        const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+        const uploadUrl = `${apiUrl}/${COMFYUI_CONFIG.UPLOAD_ENDPOINT}`;
+        
         const response = await axios.post(
-            `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.UPLOAD_ENDPOINT}`,
+            uploadUrl,
             formData,
             {
                 headers: formData.getHeaders(),
@@ -245,11 +251,15 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
         };
 
         // 4. 调用ComfyUI API
-        logger.logRequest('POST', `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.PROMPT_ENDPOINT}` , payload, { 'Content-Type': 'application/json' });
+        // 使用更安全的URL拼接方法
+        const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+        const fullUrl = `${apiUrl}/${COMFYUI_CONFIG.PROMPT_ENDPOINT}`;
+        
+        logger.logRequest('POST', fullUrl, payload, { 'Content-Type': 'application/json' });
         let response;
         try {
             response = await axios.post(
-                `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.PROMPT_ENDPOINT}`,
+                fullUrl,
                 payload,
                 {
                     headers: {
@@ -296,8 +306,12 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
     
     while (Date.now() - startTime < maxWaitTime) {
         try {
+            // 使用更安全的URL拼接方法
+            const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+            const historyUrl = `${apiUrl}/${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${promptId}`;
+            
             const response = await axios.get(
-                `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${promptId}`,
+                historyUrl,
                 { timeout: 10000 }
             );
             
@@ -311,7 +325,7 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
                             filename: img.filename,
                             subfolder: img.subfolder,
                             type: img.type,
-                            url: `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
+                            url: `${apiUrl}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
                         }));
                         
                         return {
@@ -419,9 +433,13 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
 
     // 4. 提交任务并返回 prompt_id
     const payload = { prompt: workflow, client_id: 'archvisualizer-web' };
-    logger.logRequest('POST', `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.PROMPT_ENDPOINT}` , payload, { 'Content-Type': 'application/json' });
+    // 使用更安全的URL拼接方法
+    const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+    const fullUrl = `${apiUrl}/${COMFYUI_CONFIG.PROMPT_ENDPOINT}`;
+    
+    logger.logRequest('POST', fullUrl, payload, { 'Content-Type': 'application/json' });
     const response = await axios.post(
-        `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.PROMPT_ENDPOINT}`,
+        fullUrl,
         payload,
         { headers: { 'Content-Type': 'application/json' }, timeout: COMFYUI_CONFIG.TIMEOUT }
     );
@@ -434,26 +452,47 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
 
 // 单次查询任务结果（不阻塞长时间）
 exports.fetchComfyUIResultOnce = async (promptId) => {
-    if (!promptId) throw new Error('缺少 promptId');
-    const response = await axios.get(
-        `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${encodeURIComponent(promptId)}`,
-        { timeout: 8000 }
-    );
-    if (response.data && response.data[promptId]) {
-        const output = response.data[promptId].outputs || {};
-        for (const nodeId in output) {
-            if (output[nodeId].images && output[nodeId].images.length > 0) {
-                const images = output[nodeId].images.map(img => ({
-                    filename: img.filename,
-                    subfolder: img.subfolder,
-                    type: img.type,
-                    url: `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
-                }));
-                return { ready: true, images };
+    try {
+        if (!promptId) throw new Error('缺少 promptId');
+        
+        // 使用统一的URL拼接方法
+        const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+        const historyUrl = `${apiUrl}/${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${encodeURIComponent(promptId)}`;
+        
+        logger.logRequest('GET', historyUrl, null, {});
+        const response = await axios.get(
+            historyUrl,
+            {
+                timeout: 8000,
+                validateStatus: function (status) {
+                    // 接受任何状态码，以便处理各种情况
+                    return status >= 200 && status < 600;
+                }
+            }
+        );
+        logger.logResponse(response);
+        
+        if (response.data && response.data[promptId]) {
+            const output = response.data[promptId].outputs || {};
+            for (const nodeId in output) {
+                if (output[nodeId].images && output[nodeId].images.length > 0) {
+                    const images = output[nodeId].images.map(img => ({
+                        filename: img.filename,
+                        subfolder: img.subfolder,
+                        type: img.type,
+                        // 使用更安全的URL构建方法，确保API_URL和view端点之间有正确的分隔
+                        url: new URL(`/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder)}&type=${encodeURIComponent(img.type)}`, apiUrl).href
+                    }));
+                    return { ready: true, images };
+                }
             }
         }
+        return { ready: false };
+    } catch (error) {
+        console.error(`[${new Date().toISOString()}] 查询ComfyUI结果失败:`, error.message);
+        // 出错时也返回ready: false而不是抛出异常，以便前端可以继续轮询
+        return { ready: false, error: error.message };
     }
-    return { ready: false };
 };
 
 module.exports = exports;

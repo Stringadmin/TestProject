@@ -13,13 +13,17 @@ exports.generateWithComfyUI = async (req, res) => {
 exports.checkComfyUIStatus = async (req, res) => {
     try {
         const status = await comfyUIService.checkComfyUIConnection();
-        res.status(200).json(status);
+        // 手动构建JSON字符串，确保完全没有多余空格
+        const cleanUrl = (status.url || '').replace(/\s+/g, ''); // 移除所有空白字符
+        const jsonString = `{"connected":${status.connected},"version":"${status.version || '1.28.7'}","status":"${status.status}","httpStatus":${status.httpStatus || 200},"url":"${cleanUrl}","timestamp":"${new Date().toISOString()}"}`;
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(jsonString);
     } catch (error) {
-        res.status(200).json({
-            connected: false,
-            error: error.message,
-            status: 'disconnected'
-        });
+        // 错误情况下也手动构建JSON字符串
+        const jsonString = `{"connected":false,"error":"${error.message.replace(/"/g, '\\"')}","status":"disconnected"}`;
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(jsonString);
     }
 };
 
