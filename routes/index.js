@@ -4,7 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const comfyUIController = require('../controllers/index');
-const path = require('path');
 
 // Serve static index.html for GET /
 router.get('/', (req, res) => {

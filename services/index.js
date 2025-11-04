@@ -41,14 +41,14 @@ const logger = {
 // ComfyUI配置 - 从config.js获取
 const COMFYUI_CONFIG = {
     API_URL: config.comfyUI.apiUrl,
-    PROMPT_ENDPOINT: '/prompt',
-    UPLOAD_ENDPOINT: '/upload/image',
-    HISTORY_ENDPOINT: '/history',
+    PROMPT_ENDPOINT: 'prompt',
+    UPLOAD_ENDPOINT: 'upload/image',
+    HISTORY_ENDPOINT: 'history',
     TIMEOUT: config.comfyUI.timeout,
     WORKFLOW_DIR: path.join(__dirname, '..', config.comfyUI.workflowDir)
 };
 
-// 检查ComfyUI连接状态 (简化版本)
+// 检查ComfyUI连接状态 (增强版本)
 exports.checkComfyUIConnection = async () => {
     // 检查缓存
     const now = Date.now();
@@ -59,22 +59,68 @@ exports.checkComfyUIConnection = async () => {
     try {
         console.log(`[${new Date().toISOString()}] 检查ComfyUI连接: ${COMFYUI_CONFIG.API_URL}`);
         
-        // 使用更简单的连接测试 - 直接访问根路径
-        const response = await axios.get(COMFYUI_CONFIG.API_URL, {
-            timeout: 5000,
-            validateStatus: function (status) {
-                // 接受任何状态码，只要连接成功就认为服务正常
-                return status >= 200 && status < 600;
-            }
-        });
+        // 保存原始URL用于调试
+        const originalUrl = COMFYUI_CONFIG.API_URL;
         
-        console.log(`[${new Date().toISOString()}] ComfyUI连接成功: HTTP ${response.status}`);
+        // 尝试多种连接方式，增加可靠性
+        let response;
+        let attemptUrl = originalUrl;
+        
+        // 尝试1: 直接访问根路径
+        try {
+            console.log(`[${new Date().toISOString()}] 尝试连接1: ${attemptUrl}`);
+            response = await axios.get(attemptUrl, {
+                timeout: 5000,
+                validateStatus: function (status) {
+                    // 接受任何状态码，只要连接成功就认为服务正常
+                    return status >= 200 && status < 600;
+                }
+            });
+        } catch (firstAttemptError) {
+            // 尝试2: 添加斜杠
+            if (!originalUrl.endsWith('/')) {
+                attemptUrl = originalUrl + '/';
+                console.log(`[${new Date().toISOString()}] 尝试连接2: ${attemptUrl} (添加了斜杠)`);
+                try {
+                    response = await axios.get(attemptUrl, {
+                        timeout: 5000,
+                        validateStatus: function (status) {
+                            return status >= 200 && status < 600;
+                        }
+                    });
+                } catch (secondAttemptError) {
+                    // 尝试3: 直接访问queue接口
+                    attemptUrl = originalUrl.endsWith('/') ? 
+                        `${originalUrl}queue` : 
+                        `${originalUrl}/queue`;
+                    console.log(`[${new Date().toISOString()}] 尝试连接3: ${attemptUrl} (queue接口)`);
+                    response = await axios.get(attemptUrl, {
+                        timeout: 5000,
+                        validateStatus: function (status) {
+                            return status >= 200 && status < 600;
+                        }
+                    });
+                }
+            } else {
+                throw firstAttemptError;
+            }
+        }
+        
+        console.log(`[${new Date().toISOString()}] ComfyUI连接成功: ${attemptUrl}, HTTP ${response.status}`);
+        
+        // 尝试获取版本信息（如果响应包含）
+        let version = '1.28.7'; // 默认值
+        if (response.data && response.data.version) {
+            version = response.data.version;
+        }
         
         const status = {
             connected: true,
-            version: '1.28.7',
+            version: version,
             status: 'running',
-            httpStatus: response.status
+            httpStatus: response.status,
+            url: attemptUrl,
+            timestamp: new Date().toISOString()
         };
         
         // 更新缓存
@@ -84,13 +130,20 @@ exports.checkComfyUIConnection = async () => {
         return status;
         
     } catch (error) {
-        console.error(`[${new Date().toISOString()}] ComfyUI连接失败:`, error.message);
+        console.error(`[${new Date().toISOString()}] ComfyUI连接失败:`, {
+            message: error.message,
+            code: error.code,
+            config: error.config ? { url: error.config.url } : null,
+            response: error.response ? { status: error.response.status } : null
+        });
         
         const errorResult = {
             connected: false,
             error: `无法连接到ComfyUI服务: ${error.message}`,
             status: 'disconnected',
-            errorCode: error.code
+            errorCode: error.code,
+            url: COMFYUI_CONFIG.API_URL,
+            timestamp: new Date().toISOString()
         };
         
         // 更新缓存为错误状态
@@ -111,7 +164,7 @@ exports.uploadImageToComfyUI = async (imageBuffer, filename) => {
         });
 
         const response = await axios.post(
-            `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.UPLOAD_ENDPOINT}`,
+            `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.UPLOAD_ENDPOINT}`,
             formData,
             {
                 headers: formData.getHeaders(),
@@ -192,11 +245,11 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
         };
 
         // 4. 调用ComfyUI API
-        logger.logRequest('POST', `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.PROMPT_ENDPOINT}` , payload, { 'Content-Type': 'application/json' });
+        logger.logRequest('POST', `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.PROMPT_ENDPOINT}` , payload, { 'Content-Type': 'application/json' });
         let response;
         try {
             response = await axios.post(
-                `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.PROMPT_ENDPOINT}`,
+                `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.PROMPT_ENDPOINT}`,
                 payload,
                 {
                     headers: {
@@ -244,7 +297,7 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
     while (Date.now() - startTime < maxWaitTime) {
         try {
             const response = await axios.get(
-                `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${promptId}`,
+                `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${promptId}`,
                 { timeout: 10000 }
             );
             
@@ -258,7 +311,7 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
                             filename: img.filename,
                             subfolder: img.subfolder,
                             type: img.type,
-                            url: `${COMFYUI_CONFIG.API_URL}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
+                            url: `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
                         }));
                         
                         return {
@@ -383,7 +436,7 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
 exports.fetchComfyUIResultOnce = async (promptId) => {
     if (!promptId) throw new Error('缺少 promptId');
     const response = await axios.get(
-        `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${encodeURIComponent(promptId)}`,
+        `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${encodeURIComponent(promptId)}`,
         { timeout: 8000 }
     );
     if (response.data && response.data[promptId]) {
@@ -394,7 +447,7 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
                     filename: img.filename,
                     subfolder: img.subfolder,
                     type: img.type,
-                    url: `${COMFYUI_CONFIG.API_URL}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
+                    url: `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.API_URL.endsWith('/') ? '' : '/'}view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
                 }));
                 return { ready: true, images };
             }

@@ -39,7 +39,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "COMFYUI_API_URL": "https://comfyui.oopshub.cn"
+    "COMFYUI_API_URL": "https://comfyui.oopshub.cn/"
   },
   "headers": [
     {

@@ -221,12 +221,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt,
-            workflow: 'test',
             workflowName: 'test',
             workflowPath: 'comfyui_workflows/test.json'
           }),
           signal: controller.signal
         });
+        console.log('使用工作流: comfyui_workflows/test.json');
         clearTimeout(clientTimeout);
         const submitData = await submitRes.json();
         if (!submitRes.ok || !submitData.success || !submitData.data?.promptId) {
