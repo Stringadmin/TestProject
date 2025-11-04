@@ -313,4 +313,94 @@ exports.validateWorkflow = async (workflowName, workflowPath) => {
     }
 };
 
+// 提交任务，仅返回 prompt_id（不长等待）
+exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflowPath) => {
+    // 基于 processComfyUIRequest 的前半段逻辑，但不等待结果
+    // 1. 检查连接
+    const connectionStatus = await exports.checkComfyUIConnection();
+    if (!connectionStatus.connected) {
+        throw new Error(`ComfyUI连接失败: ${connectionStatus.error}`);
+    }
+
+    // 2. 定位工作流
+    const candidatePaths = [];
+    const normalizedPath = workflowPath ? path.normalize(workflowPath) : null;
+    if (normalizedPath) {
+        const provided = path.isAbsolute(normalizedPath)
+            ? normalizedPath
+            : path.resolve(__dirname, '..', normalizedPath);
+        candidatePaths.push(provided);
+        if (!path.isAbsolute(normalizedPath)) {
+            candidatePaths.push(path.resolve(process.cwd(), normalizedPath));
+        }
+    }
+    if (workflowName) {
+        candidatePaths.push(path.join(COMFYUI_CONFIG.WORKFLOW_DIR, `${workflowName}.json`));
+        candidatePaths.push(path.resolve(__dirname, '..', `${workflowName}.json`));
+    }
+    const finalPath = candidatePaths.find(p => {
+        try { return !!p && fs.existsSync(p); } catch { return false; }
+    });
+    if (!finalPath) {
+        throw new Error(`工作流模板不存在：${workflowName || workflowPath}`);
+    }
+    const workflow = JSON.parse(fs.readFileSync(finalPath, 'utf8'));
+
+    // 3. 注入提示词（若可能）
+    const isUIPrompt = workflow && Array.isArray(workflow.nodes);
+    const isAPIPrompt = workflow && !isUIPrompt && Object.values(workflow).some(v => v && typeof v === 'object' && v.class_type && v.inputs);
+    if (isUIPrompt && !isAPIPrompt) {
+        throw new Error('工作流文件为UI工作流格式，需转换为API Prompt格式（包含class_type/inputs结构）。');
+    }
+    if (isAPIPrompt && typeof prompt === 'string' && prompt.trim()) {
+        try {
+            for (const nodeId of Object.keys(workflow)) {
+                const node = workflow[nodeId];
+                if (node && typeof node === 'object' && /CLIPTextEncode/i.test(node.class_type)) {
+                    if (!node.inputs) node.inputs = {};
+                    node.inputs.text = prompt.trim();
+                }
+            }
+        } catch (_) {}
+    }
+
+    // 4. 提交任务并返回 prompt_id
+    const payload = { prompt: workflow, client_id: 'archvisualizer-web' };
+    logger.logRequest('POST', `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.PROMPT_ENDPOINT}` , payload, { 'Content-Type': 'application/json' });
+    const response = await axios.post(
+        `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.PROMPT_ENDPOINT}`,
+        payload,
+        { headers: { 'Content-Type': 'application/json' }, timeout: COMFYUI_CONFIG.TIMEOUT }
+    );
+    logger.logResponse(response);
+    if (!response.data || !response.data.prompt_id) {
+        throw new Error('ComfyUI 未返回 prompt_id');
+    }
+    return { promptId: response.data.prompt_id };
+};
+
+// 单次查询任务结果（不阻塞长时间）
+exports.fetchComfyUIResultOnce = async (promptId) => {
+    if (!promptId) throw new Error('缺少 promptId');
+    const response = await axios.get(
+        `${COMFYUI_CONFIG.API_URL}${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${encodeURIComponent(promptId)}`,
+        { timeout: 8000 }
+    );
+    if (response.data && response.data[promptId]) {
+        const output = response.data[promptId].outputs || {};
+        for (const nodeId in output) {
+            if (output[nodeId].images && output[nodeId].images.length > 0) {
+                const images = output[nodeId].images.map(img => ({
+                    filename: img.filename,
+                    subfolder: img.subfolder,
+                    type: img.type,
+                    url: `${COMFYUI_CONFIG.API_URL}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
+                }));
+                return { ready: true, images };
+            }
+        }
+    }
+    return { ready: false };
+};
+
 module.exports = exports;

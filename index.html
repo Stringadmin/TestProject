@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArchVisualizer - 文本生图</title>
+  <title>OopsHub - 文本生图</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script>
@@ -54,7 +54,7 @@
       <div class="flex justify-between h-16 items-center">
         <a href="index.html" class="flex items-center space-x-2 group">
           <i class="fa-solid fa-building text-primary text-2xl group-hover:scale-105 transition-transform"></i>
-          <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">ArchVisualizer</span>
+          <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">OopsHub</span>
         </a>
         <div class="flex items-center space-x-1 md:space-x-4 text-sm font-medium">
           <a href="#" class="px-3 py-2 rounded-md text-primary bg-primary/10 border-b-2 border-primary transition-all">
@@ -168,7 +168,7 @@
   <!-- 页脚 -->
   <footer class="mt-16 py-6 border-t border-gray-200">
     <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-      <p>© 2023 ArchVisualizer 智能建筑可视化工具 | 设计更高效，创意更自由</p>
+      <p>© 2023 OopsHub 智能建筑可视化工具 | 设计更高效，创意更自由</p>
     </div>
   </footer>
 
@@ -215,7 +215,8 @@
         const controller = new AbortController();
         const clientTimeout = setTimeout(() => controller.abort(), 120000);
 
-        const response = await fetch(`${api}/comfyui/generate`, {
+        // Step1: 提交任务，获取 promptId（短请求）
+        const submitRes = await fetch(`${api}/comfyui/submit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -226,30 +227,45 @@
           }),
           signal: controller.signal
         });
-
-        // 请求完成，清理超时计时器
         clearTimeout(clientTimeout);
-
-        const data = await response.json();
-        
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || '生成失败，请重试');
+        const submitData = await submitRes.json();
+        if (!submitRes.ok || !submitData.success || !submitData.data?.promptId) {
+          throw new Error(submitData.message || '提交生成任务失败');
         }
-        
-        if (!data.data?.generatedImages?.length) {
-          throw new Error('未获取到生成结果');
-        }
+        const promptId = submitData.data.promptId;
 
-        // 加载图片并显示
-        resultImg.src = data.data.generatedImages[0].url;
-        resultImg.onload = () => {
-          loadingPlaceholder.classList.add('hidden');
-          resultImg.classList.remove('hidden');
-          // 显示结果的动画
-          setTimeout(() => {
-            resultBox.classList.remove('opacity-0', 'scale-95');
-          }, 100);
-        };
+        // Step2: 前端轮询查询结果（每2秒一次，最多120秒）
+        const startedAt = Date.now();
+        const POLL_INTERVAL = 2000;
+        const MAX_DURATION = 120000; // 2分钟客户端等待上限
+        let ready = false;
+        while (!ready && Date.now() - startedAt < MAX_DURATION) {
+          await new Promise(r => setTimeout(r, POLL_INTERVAL));
+          const rController = new AbortController();
+          const rTimeout = setTimeout(() => rController.abort(), 10000);
+          const resultRes = await fetch(`${api}/comfyui/result?promptId=${encodeURIComponent(promptId)}`, {
+            method: 'GET',
+            signal: rController.signal
+          });
+          clearTimeout(rTimeout);
+          if (!resultRes.ok) continue;
+          const resultData = await resultRes.json();
+          if (resultData.success && resultData.data?.ready && resultData.data.images?.length) {
+            ready = true;
+            const imgUrl = resultData.data.images[0].url;
+            resultImg.src = imgUrl;
+            resultImg.onload = () => {
+              loadingPlaceholder.classList.add('hidden');
+              resultImg.classList.remove('hidden');
+              setTimeout(() => {
+                resultBox.classList.remove('opacity-0', 'scale-95');
+              }, 100);
+            };
+          }
+        }
+        if (!ready) {
+          throw new Error('在预设时间内未获取到生成结果，请稍后在“历史记录”中查看或重试');
+        }
 
       } catch (error) {
         const msg = error.name === 'AbortError' 
