@@ -4,6 +4,12 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const comfyUIController = require('../controllers/index');
+const path = require('path');
+
+// Serve static index.html for GET /
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
 
 // 在函数计算环境中使用 /tmp 作为可写目录
 const uploadsDir = path.join('/tmp', 'uploads');
