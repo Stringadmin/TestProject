@@ -64,7 +64,7 @@ app.get('/__whoami', (req, res) => {
     headers: req.headers || {}
   });
 });
-app.get('/', (req, res) => {
+app.get('/info', (req, res) => {
   const headers = req.headers || {};
   res.status(200).json({
     name: 'fanghezi api',
