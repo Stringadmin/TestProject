@@ -2,11 +2,19 @@
   "version": 2,
   "builds": [
     {
+      "src": "index.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/index.js",
       "use": "@vercel/node"
     },
     {
       "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "uploads/(.*)",
       "use": "@vercel/static"
     }
   ],
@@ -30,34 +38,37 @@
       }
     },
     {
+      "src": "/uploads/(.*)",
+      "dest": "/uploads/$1"
+    },
+    {
+      "src": "^/(.+\\.(html|js|css|png|jpg|jpeg|gif|ico|json))$",
+      "dest": "/$1"
+    },
+    {
       "handle": "filesystem"
     },
     {
+      "src": "/",
+      "dest": "/index.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
       "src": "/(.*)",
-      "dest": "/test.html"
+      "dest": "/index.html",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
     }
   ],
   "env": {
     "NODE_ENV": "production",
     "COMFYUI_API_URL": "https://comfyui.oopshub.cn/"
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
-    }
-  ]
+  }
 }
