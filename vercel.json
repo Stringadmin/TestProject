@@ -36,8 +36,8 @@
       "destination": "/uploads/:path*"
     },
     {
-      "source": "^/(.+\\.(html|js|css|png|jpg|jpeg|gif|ico|json))$",
-      "destination": "/$1"
+      "source": "/:filename(.*\\.(html|js|css|png|jpg|jpeg|gif|ico|json))",
+      "destination": "/$filename"
     },
     {
       "source": "/",
