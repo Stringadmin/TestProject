@@ -40,9 +40,6 @@
       "destination": "/$1"
     },
     {
-      "handle": "filesystem"
-    },
-    {
       "source": "/",
       "destination": "/index.js"
     },
