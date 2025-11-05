@@ -24,43 +24,35 @@
       "destination": "https://comfyui.oopshub.cn/:path*"
     },
     {
-      "source": "/api/(.*)",
+      "source": "/comfyui/:path*",
       "destination": "/api/index.js"
     },
     {
-      "source": "/uploads/(.*)",
-      "destination": "/uploads/$1"
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "/uploads/:path*"
     },
     {
       "source": "^/(.+\\.(html|js|css|png|jpg|jpeg|gif|ico|json))$",
       "destination": "/$1"
     },
     {
-      "source": "/(.*)",
+      "handle": "filesystem"
+    },
+    {
+      "source": "/",
       "destination": "/index.js"
-    }
-  ],
-  "headers": [
+    },
     {
       "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
+      "destination": "/index.html"
     }
   ],
   "env": {
     "NODE_ENV": "production",
-    "COMFYUI_API_URL": "https://comfyui.oopshub.cn/"
+    "COMFYUI_API_URL": "/comfy"
   }
 }
