@@ -49,13 +49,14 @@ const COMFYUI_CONFIG = {
 };
 
 // 检查ComfyUI连接状态 (增强版本)
-exports.checkComfyUIConnection = async () => {
+// url参数：可选，允许外部传入修复后的URL
+exports.checkComfyUIConnection = async (url) => {
     // 强制清除缓存，确保使用最新的URL处理
     connectionCache.status = null;
     
-    // 每次调用时获取最新的配置值，而不是使用初始化时的值
-    const currentApiUrl = (config.comfyUI.apiUrl || '').trim();
-    console.log(`[${new Date().toISOString()}] 使用最新配置的API URL: ${currentApiUrl}`);
+    // 如果传入了URL，则使用传入的URL，否则获取配置中的URL
+    const currentApiUrl = url || (config.comfyUI.apiUrl || '').trim();
+    console.log(`[${new Date().toISOString()}] 使用的API URL: ${currentApiUrl}`);
 
     try {
         
@@ -399,6 +400,34 @@ exports.validateWorkflow = async (workflowName, workflowPath) => {
 
 // 提交任务，仅返回 prompt_id（不长等待）
 exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflowPath) => {
+    // 每次调用时获取最新配置，避免使用初始化时的COMFYUI_CONFIG
+    let currentApiUrl = (config.comfyUI.apiUrl || '').trim();
+    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 最新API URL: ${currentApiUrl}`);
+    
+    // URL格式验证和修复 - 确保使用完整的Cloudflare隧道URL
+    try {
+        // 检查是否为相对路径
+        if (currentApiUrl.startsWith('/')) {
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 检测到相对路径，转换为完整URL`);
+            currentApiUrl = `https://comfyui.oopshub.cn${currentApiUrl}`;
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 转换后的URL: ${currentApiUrl}`);
+        }
+        
+        // 检查是否缺少协议
+        if (!currentApiUrl.startsWith('http://') && !currentApiUrl.startsWith('https://')) {
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 检测到缺少协议，添加https`);
+            currentApiUrl = `https://${currentApiUrl}`;
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 添加协议后的URL: ${currentApiUrl}`);
+        }
+        
+        // 验证URL格式
+        new URL(currentApiUrl);
+        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - URL格式验证通过`);
+    } catch (urlError) {
+        console.error(`[${new Date().toISOString()}] submitComfyUIPrompt - URL格式无效，使用默认值`);
+        currentApiUrl = 'https://comfyui.oopshub.cn';
+        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 使用默认URL: ${currentApiUrl}`);
+    }
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 收到提交任务请求: workflow=${workflowName}`);
     
     // 详细记录函数调用参数
@@ -411,8 +440,8 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     });
     
     // 1. 检查连接
-    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 开始检查ComfyUI连接状态`);
-    const connectionStatus = await exports.checkComfyUIConnection();
+    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 开始检查ComfyUI连接状态（使用修复后的URL）`);
+    const connectionStatus = await exports.checkComfyUIConnection(currentApiUrl);
     
     // 详细记录连接状态
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 连接状态详情:`, {
