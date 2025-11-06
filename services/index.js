@@ -394,8 +394,22 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
     
     while (Date.now() - startTime < maxWaitTime) {
         try {
+            // 获取最新的API URL配置
+            let apiUrl = (config.comfyUI.apiUrl || '').trim();
+            
+            // 生产环境使用相对路径代理
+            if (process.env.NODE_ENV === 'production') {
+                console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
+                apiUrl = '/comfy';
+            }
+            
+            // 默认值
+            if (!apiUrl) {
+                apiUrl = '/comfy';
+            }
+            
             // 使用更安全的URL拼接方法
-            const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+            apiUrl = apiUrl.replace(/\/$/, ''); // 确保没有尾部斜杠
             const historyUrl = `${apiUrl}/${COMFYUI_CONFIG.HISTORY_ENDPOINT}/${promptId}`;
             
             const response = await axios.get(
@@ -611,8 +625,8 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
 
     // 4. 提交任务并返回 prompt_id
     const payload = { prompt: workflow, client_id: 'archvisualizer-web' };
-    // 使用更安全的URL拼接方法
-    const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, ''); // 确保没有尾部斜杠
+    // 使用更安全的URL拼接方法 - 使用处理过的currentApiUrl而不是初始化时的COMFYUI_CONFIG.API_URL
+    const apiUrl = currentApiUrl.replace(/\/$/, ''); // 确保没有尾部斜杠
     const fullUrl = `${apiUrl}/${COMFYUI_CONFIG.PROMPT_ENDPOINT}`;
     
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 准备提交任务到ComfyUI: ${fullUrl}`);
@@ -779,12 +793,35 @@ exports.setupImageProxy = (app) => {
                 return res.status(400).json({ error: '缺少必要的图像参数' });
             }
             
+            // 获取最新的API URL配置
+            let apiUrl = (config.comfyUI.apiUrl || '').trim();
+            
+            // 生产环境使用相对路径代理
+            if (process.env.NODE_ENV === 'production') {
+                console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
+                apiUrl = '/comfy';
+            }
+            
+            // 默认值
+            if (!apiUrl) {
+                apiUrl = '/comfy';
+            }
+            
             // 构建ComfyUI的原始图像URL
-            const apiUrl = COMFYUI_CONFIG.API_URL.replace(/\/$/, '');
-            const originalImageUrl = new URL(
-                `/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`,
-                apiUrl
-            ).href;
+            apiUrl = apiUrl.replace(/\/$/, '');
+            
+            // 对于相对路径，直接拼接；对于绝对路径，使用URL构造函数
+            let originalImageUrl;
+            if (apiUrl.startsWith('/')) {
+                // 相对路径
+                originalImageUrl = `${apiUrl}/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`;
+            } else {
+                // 绝对路径
+                originalImageUrl = new URL(
+                    `/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`,
+                    apiUrl
+                ).href;
+            }
             
             console.log(`[${new Date().toISOString()}] 构建原始图像URL:`, originalImageUrl);
             
