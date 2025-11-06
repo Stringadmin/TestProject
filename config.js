@@ -30,9 +30,14 @@ module.exports = {
   jwtSecret: 'your-secret-key',
   
   comfyUI: {
-    // 在生产环境中使用'/comfy'（通过Vercel代理），在开发环境中直接连接到实际服务器
-    apiUrl: process.env.COMFYUI_API_URL || (isProduction ? '/comfy' : 'https://comfyui.oopshub.cn'),
+    // 在生产环境中使用'/comfy'（通过Vercel代理），在开发环境中直接连接到Cloudflare隧道
+    apiUrl: process.env.COMFYUI_API_URL || (isProduction ? 'https://comfyui.oopshub.cn' : 'https://comfyui.oopshub.cn'),
     timeout: process.env.COMFYUI_TIMEOUT || 180000,
-    workflowDir: process.env.COMFYUI_WORKFLOW_DIR || 'comfyui_workflows'
+    workflowDir: process.env.COMFYUI_WORKFLOW_DIR || 'comfyui_workflows',
+    // 添加重试配置以提高连接稳定性
+    retryConfig: {
+      maxRetries: 3,
+      retryDelay: 2000
+    }
   }
 };
