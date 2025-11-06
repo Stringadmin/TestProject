@@ -57,11 +57,7 @@ exports.checkComfyUIConnection = async (url) => {
     let currentApiUrl = url || (config.comfyUI.apiUrl || '').trim();
     console.log(`[${new Date().toISOString()}] 使用的API URL: ${currentApiUrl}`);
     
-    // 生产环境使用相对路径代理
-    if (process.env.NODE_ENV === 'production') {
-        console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
-        currentApiUrl = '/comfy';
-    }
+
     
     // 特殊处理相对路径（Vercel环境）- 移到缓存检查之前
     const isRelativePath = currentApiUrl.startsWith('/');
@@ -207,11 +203,7 @@ exports.uploadImageToComfyUI = async (imageBuffer, filename) => {
         // 获取最新的API URL配置
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
-        // 生产环境使用相对路径代理
-        if (process.env.NODE_ENV === 'production') {
-            console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
-            apiUrl = '/comfy';
-        }
+
         
         // 默认值
         if (!apiUrl) {
@@ -309,11 +301,7 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
         // 获取最新的API URL配置
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
-        // 生产环境使用相对路径代理
-        if (process.env.NODE_ENV === 'production') {
-            console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
-            apiUrl = '/comfy';
-        }
+
         
         // 默认值
         if (!apiUrl) {
@@ -397,11 +385,7 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
             // 获取最新的API URL配置
             let apiUrl = (config.comfyUI.apiUrl || '').trim();
             
-            // 生产环境使用相对路径代理
-            if (process.env.NODE_ENV === 'production') {
-                console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
-                apiUrl = '/comfy';
-            }
+
             
             // 默认值
             if (!apiUrl) {
@@ -488,37 +472,7 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     let currentApiUrl = (config.comfyUI.apiUrl || '').trim();
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 最新API URL: ${currentApiUrl}`);
     
-    // URL格式验证和修复 - 确保使用有效的URL
-    try {
-        // 检查是否为相对路径
-        if (currentApiUrl.startsWith('/')) {
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 检测到相对路径，由Vercel代理处理`);
-            // 保持相对路径，由Vercel代理处理
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 保留相对路径: ${currentApiUrl}`);
-        }
-        // 生产环境使用相对路径代理
-        else if (process.env.NODE_ENV === 'production') {
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 生产环境，使用代理路径`);
-            currentApiUrl = '/comfy';
-        }
-        // 检查是否缺少协议
-        else if (!currentApiUrl.startsWith('http://') && !currentApiUrl.startsWith('https://')) {
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 检测到缺少协议，添加https`);
-            currentApiUrl = `https://${currentApiUrl}`;
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 添加协议后的URL: ${currentApiUrl}`);
-        }
-        
-        // 验证URL格式
-        if (!currentApiUrl.startsWith('/')) {
-            new URL(currentApiUrl);
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - URL格式验证通过`);
-        }
-    } catch (urlError) {
-        console.error(`[${new Date().toISOString()}] submitComfyUIPrompt - URL格式无效，使用默认值`, urlError);
-        // 使用相对路径作为默认值，由Vercel代理处理
-        currentApiUrl = '/comfy';
-        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 使用默认相对路径URL: ${currentApiUrl}`);
-    }
+
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 收到提交任务请求: workflow=${workflowName}`);
     
     // 详细记录函数调用参数
@@ -669,11 +623,7 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
         // 获取最新的API URL配置
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
-        // 生产环境使用相对路径代理
-        if (process.env.NODE_ENV === 'production') {
-            console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
-            apiUrl = '/comfy';
-        }
+
         
         // 默认值
         if (!apiUrl) {
@@ -796,11 +746,7 @@ exports.setupImageProxy = (app) => {
             // 获取最新的API URL配置
             let apiUrl = (config.comfyUI.apiUrl || '').trim();
             
-            // 生产环境使用相对路径代理
-            if (process.env.NODE_ENV === 'production') {
-                console.log(`[${new Date().toISOString()}] 生产环境，使用代理路径`);
-                apiUrl = '/comfy';
-            }
+
             
             // 默认值
             if (!apiUrl) {
