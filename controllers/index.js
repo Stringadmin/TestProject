@@ -53,12 +53,10 @@ exports.submitPrompt = async (req, res) => {
         const result = await comfyUIService.submitComfyUIPrompt(prompt, designImage, workflow, workflowPath);
         console.log('服务处理结果:', result);
         
-        // 确保将isMock标志传递给前端
-        res.status(200).json({ 
+            res.status(200).json({ 
             success: true, 
             data: {
-                promptId: result.promptId,
-                isMock: result.isMock || false
+                promptId: result.promptId
             }
         });
     } catch (error) {
@@ -75,18 +73,9 @@ exports.fetchResultOnce = async (req, res) => {
         
         console.log(`收到/comfyui/result请求，查询promptId: ${promptId}`);
         
-        // 检查是否为模拟promptId
-        if (promptId.startsWith('mock_')) {
-            console.log(`检测到模拟promptId，调用waitForComfyUIResult获取模拟结果`);
-            // 对于模拟promptId，直接调用waitForComfyUIResult获取模拟结果
-            const result = await comfyUIService.waitForComfyUIResult(promptId, 5000);
-            console.log('模拟结果获取成功:', result);
-            res.status(200).json({ success: true, data: result });
-        } else {
-            // 正常情况调用fetchComfyUIResultOnce
-            const result = await comfyUIService.fetchComfyUIResultOnce(promptId);
-            res.status(200).json({ success: true, data: result });
-        }
+        // 正常情况调用fetchComfyUIResultOnce
+        const result = await comfyUIService.fetchComfyUIResultOnce(promptId);
+        res.status(200).json({ success: true, data: result });
     } catch (error) {
         console.error('获取结果失败:', { name: error.name, message: error.message });
         res.status(500).json({ success: false, message: error.message });

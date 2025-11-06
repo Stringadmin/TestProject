@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const config = require('../config');
 
 // 配置翻译服务类型
-const TRANSLATION_SERVICE = 'mock'; // 可选: 'google', 'youdao', 'microsoft'
+const TRANSLATION_SERVICE = 'youdao'; // 可选: 'google', 'youdao', 'microsoft'
 
 /**
  * 网易有道翻译服务
@@ -15,8 +15,7 @@ const TRANSLATION_SERVICE = 'mock'; // 可选: 'google', 'youdao', 'microsoft'
 async function youdaoTranslate(text, fromLang, toLang) {
   // 检查必要的配置
   if (!config.youdao || !config.youdao.appKey || !config.youdao.appSecret) {
-    console.log('网易有道翻译服务配置不完整，使用模拟翻译');
-    return mockTranslate(text, fromLang, toLang);
+    throw new Error('网易有道翻译服务配置不完整');
   }
 
   try {
@@ -50,13 +49,11 @@ async function youdaoTranslate(text, fromLang, toLang) {
       return response.data.translation.join('');
     } else {
       console.error('网易有道翻译API调用失败:', response.data.errorCode, response.data.errorMsg);
-      // 出错时回退到模拟翻译
-      return mockTranslate(text, fromLang, toLang);
+      throw new Error(`翻译服务返回错误: ${response.data.errorCode} ${response.data.errorMsg}`);
     }
   } catch (error) {
     console.error('网易有道翻译服务请求失败:', error.message);
-    // 网络错误时回退到模拟翻译
-    return mockTranslate(text, fromLang, toLang);
+    throw error;
   }
 }
 
@@ -94,21 +91,7 @@ function convertLangCode(langCode) {
   return langMap[langCode] || 'auto';
 }
 
-/**
- * 模拟翻译服务（当其他翻译服务不可用时作为回退）
- * @param {string} text - 需要翻译的文本
- * @param {string} fromLang - 源语言代码
- * @param {string} toLang - 目标语言代码
- * @returns {Promise<string>} 模拟翻译后的文本
- */
-async function mockTranslate(text, fromLang, toLang) {
-  console.log('使用模拟翻译服务');
-  // 简单的模拟逻辑，实际应用中可以根据需求扩展
-  if (fromLang !== toLang) {
-    return `[${toLang}] ${text}`;
-  }
-  return text;
-}
+
 
 /**
  * 翻译服务主函数

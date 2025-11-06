@@ -338,25 +338,6 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
 
 // 等待ComfyUI任务完成
 exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5分钟最大等待时间
-    // 检查是否为模拟的promptId
-    if (promptId && promptId.startsWith('mock_')) {
-        console.log(`[${new Date().toISOString()}] waitForComfyUIResult - 检测到模拟promptId: ${promptId}`);
-        // 模拟一个短暂的延迟，模拟处理时间
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        // 返回模拟的成功响应，包含示例图像URL
-        console.log(`[${new Date().toISOString()}] waitForComfyUIResult - 返回模拟成功响应`);
-        return {
-            images: [{
-                filename: 'mock_generated_image.png',
-                subfolder: 'outputs',
-                type: 'output',
-                url: '/mock-image.jpg' // 这是一个占位符URL，前端可以使用默认图像
-            }],
-            executionTime: 2000,
-            isMock: true
-        };
-    }
-    
     const startTime = Date.now();
     
     while (Date.now() - startTime < maxWaitTime) {
@@ -474,18 +455,7 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
         error: connectionStatus.error
     });
     
-    // 检查是否为530错误（这是我们遇到的特定错误）
-    const is530Error = (connectionStatus.httpStatus === 530) || 
-                      (connectionStatus.error && connectionStatus.error.includes('530'));
-    
-    // 如果是530错误，直接提供模拟响应
-    if (is530Error) {
-        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 检测到530错误，提供模拟响应`);
-        // 生成模拟的promptId，包含时间戳确保唯一性
-        const mockPromptId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 返回模拟promptId: ${mockPromptId}`);
-        return { promptId: mockPromptId, isMock: true };
-    }
+
     
     // 其他连接错误
     if (!connectionStatus.connected) {
