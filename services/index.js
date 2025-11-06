@@ -53,16 +53,14 @@ exports.checkComfyUIConnection = async () => {
     // 强制清除缓存，确保使用最新的URL处理
     connectionCache.status = null;
     
-    // 确保COMFYUI_CONFIG.API_URL不包含空格
-    if (COMFYUI_CONFIG.API_URL) {
-        COMFYUI_CONFIG.API_URL = COMFYUI_CONFIG.API_URL.trim();
-    }
+    // 每次调用时获取最新的配置值，而不是使用初始化时的值
+    const currentApiUrl = (config.comfyUI.apiUrl || '').trim();
+    console.log(`[${new Date().toISOString()}] 使用最新配置的API URL: ${currentApiUrl}`);
 
     try {
-        console.log(`[${new Date().toISOString()}] 检查ComfyUI连接: ${COMFYUI_CONFIG.API_URL}`);
         
         // 保存原始URL用于调试
-        const originalUrl = COMFYUI_CONFIG.API_URL;
+        const originalUrl = currentApiUrl;
         
         // 尝试多种连接方式，增加可靠性
         let response;
@@ -144,7 +142,7 @@ exports.checkComfyUIConnection = async () => {
             error: `无法连接到ComfyUI服务: ${error.message}`,
             status: 'disconnected',
             errorCode: error.code,
-            url: COMFYUI_CONFIG.API_URL.trim(), // 去除URL两端的空格
+            url: currentApiUrl, // 使用当前获取的URL
             timestamp: new Date().toISOString()
         };
         
