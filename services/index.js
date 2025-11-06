@@ -51,12 +51,45 @@ const COMFYUI_CONFIG = {
 // 检查ComfyUI连接状态 (增强版本)
 // url参数：可选，允许外部传入修复后的URL
 exports.checkComfyUIConnection = async (url) => {
-    // 强制清除缓存，确保使用最新的URL处理
-    connectionCache.status = null;
+    const now = Date.now();
     
     // 如果传入了URL，则使用传入的URL，否则获取配置中的URL
-    const currentApiUrl = url || (config.comfyUI.apiUrl || '').trim();
+    let currentApiUrl = url || (config.comfyUI.apiUrl || '').trim();
     console.log(`[${new Date().toISOString()}] 使用的API URL: ${currentApiUrl}`);
+    
+    // 特殊处理相对路径（Vercel环境）- 移到缓存检查之前
+    const isRelativePath = currentApiUrl.startsWith('/');
+    console.log(`[${new Date().toISOString()}] 路径类型检查: ${isRelativePath ? '相对路径' : '绝对路径'}, 环境: ${process.env.NODE_ENV || 'development'}`);
+    
+    // 对于相对路径，直接模拟成功（将在Vercel环境通过代理实际连接）
+    if (isRelativePath) {
+        console.log(`[${new Date().toISOString()}] 检测到相对路径，模拟连接成功（将在Vercel环境通过代理实际连接）`);
+        
+        const mockSuccessStatus = {
+            connected: true,
+            httpStatus: 200,
+            status: 'connected',
+            version: 'mock-version',
+            url: currentApiUrl,
+            timestamp: new Date().toISOString(),
+            isMock: true,
+            note: '相对路径将在Vercel环境中通过代理实际连接'
+        };
+        
+        // 更新缓存
+        connectionCache.lastCheck = now;
+        connectionCache.status = mockSuccessStatus;
+        
+        return mockSuccessStatus;
+    }
+    
+    // 检查缓存
+    if (connectionCache.lastCheck > now - connectionCache.expireTime && 
+        connectionCache.status && 
+        connectionCache.status.url === currentApiUrl) {
+        console.log(`[${new Date().toISOString()}] 使用缓存的连接状态`);
+        return connectionCache.status;
+    }
 
     try {
         
@@ -118,15 +151,15 @@ exports.checkComfyUIConnection = async (url) => {
         const status = {
             connected: true,
             version: version,
-            status: 'running',
+            status: 'connected',
             httpStatus: response.status,
-            url: attemptUrl.trim(), // 去除URL两端的空格
+            url: currentApiUrl,
             timestamp: new Date().toISOString()
         };
         
         // 更新缓存
+        connectionCache.lastCheck = now;
         connectionCache.status = status;
-        connectionCache.lastCheck = Date.now();
         
         return status;
         
@@ -143,13 +176,13 @@ exports.checkComfyUIConnection = async (url) => {
             error: `无法连接到ComfyUI服务: ${error.message}`,
             status: 'disconnected',
             errorCode: error.code,
-            url: currentApiUrl, // 使用当前获取的URL
+            url: currentApiUrl,
             timestamp: new Date().toISOString()
         };
         
         // 更新缓存为错误状态
+        connectionCache.lastCheck = now;
         connectionCache.status = errorResult;
-        connectionCache.lastCheck = Date.now();
         
         return errorResult;
     }
@@ -404,13 +437,14 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     let currentApiUrl = (config.comfyUI.apiUrl || '').trim();
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 最新API URL: ${currentApiUrl}`);
     
-    // URL格式验证和修复 - 确保使用完整的Cloudflare隧道URL
+    // URL格式验证和修复 - 确保使用有效的URL
     try {
         // 检查是否为相对路径
         if (currentApiUrl.startsWith('/')) {
             console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 检测到相对路径，转换为完整URL`);
-            currentApiUrl = `https://comfyui.oopshub.cn${currentApiUrl}`;
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 转换后的URL: ${currentApiUrl}`);
+            // 使用相对路径的代理方式（Vercel环境适用）
+            currentApiUrl = currentApiUrl; // 保持相对路径，由Vercel代理处理
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 保留相对路径: ${currentApiUrl}`);
         }
         
         // 检查是否缺少协议
@@ -425,8 +459,9 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
         console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - URL格式验证通过`);
     } catch (urlError) {
         console.error(`[${new Date().toISOString()}] submitComfyUIPrompt - URL格式无效，使用默认值`);
-        currentApiUrl = 'https://comfyui.oopshub.cn';
-        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 使用默认URL: ${currentApiUrl}`);
+        // 使用相对路径作为默认值，由Vercel代理处理
+        currentApiUrl = '/comfy';
+        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 使用默认相对路径URL: ${currentApiUrl}`);
     }
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 收到提交任务请求: workflow=${workflowName}`);
     
