@@ -203,8 +203,8 @@
           controller.abort();
         }, 10000); // 进一步延长超时时间
         
-        console.log('发送GET请求到: /comfyui/status');
-        const response = await fetch('/comfyui/status', {
+        console.log('发送GET请求到: /checkComfyUIStatus');
+        const response = await fetch('/checkComfyUIStatus', {
           method: 'GET',
           signal: controller.signal,
           headers: {
