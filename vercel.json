@@ -21,7 +21,7 @@
   "rewrites": [
     {
       "source": "/comfy/:path*",
-      "destination": "https://api.comfyui.com/:path*"  // 使用一个通用的ComfyUI服务地址，实际部署时需要替换为正确的地址
+      "destination": "https://comfyui.oopshub.cn/:path*"
     },
     {
       "source": "/comfyui/:path*",

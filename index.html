@@ -196,23 +196,22 @@
     async function checkComfyUIConnection() {
       console.log('开始检查ComfyUI连接状态...');
       try {
-        // 使用AbortController实现超时控制
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log('连接检查超时，取消请求');
-          controller.abort();
-        }, 10000); // 进一步延长超时时间
-        
-        console.log('发送GET请求到: /checkComfyUIStatus');
-        const response = await fetch('/checkComfyUIStatus', {
-          method: 'GET',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json'
-          }
+        // 使用Promise.race实现超时控制
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('请求超时')), 10000);
         });
         
-        clearTimeout(timeoutId);
+        const fetchPromise = fetch('/comfyui/status', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        console.log('发送GET请求到: /comfyui/status');
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        
         console.log(`连接状态请求完成，状态码: ${response.status}`);
         
         if (!response.ok) {

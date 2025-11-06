@@ -588,7 +588,7 @@
                     statusText.textContent = 'ComfyUI: 连接中...';
                     
                     const startTime = Date.now();
-                    const res = await fetch(`${apiBase}/checkComfyUIStatus`, {
+                    const res = await fetch(`${apiBase}/comfyui/status`, {
                         cache: 'no-cache',
                         timeout: 8000 // 增加超时时间
                     });
@@ -801,7 +801,7 @@
                     usedWorkflowInfo.textContent = '检查中：验证ComfyUI服务连接...';
                     console.log('步骤1: 检查ComfyUI连接状态');
                     
-                    const statusResponse = await fetch(`${apiBase}/checkComfyUIStatus`, { 
+                    const statusResponse = await fetch(`${apiBase}/comfyui/status`, { 
                         cache: 'no-cache'
                     });
                     

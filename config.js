@@ -1,5 +1,6 @@
 // 判断是否为生产环境
 const isProduction = process.env.NODE_ENV === 'production';
+const path = require('path');
 
 module.exports = {
   // 应用配置
@@ -30,14 +31,13 @@ module.exports = {
   jwtSecret: 'your-secret-key',
   
   comfyUI: {
-    // 在所有环境中默认使用相对路径'/comfy'，通过Vercel代理连接到ComfyUI服务
-    apiUrl: process.env.COMFYUI_API_URL || '/comfy',
-    timeout: process.env.COMFYUI_TIMEOUT || 180000,
-    workflowDir: process.env.COMFYUI_WORKFLOW_DIR || 'comfyui_workflows',
-    // 添加重试配置以提高连接稳定性
+    // 直接使用comfyui.oopshub.cn域名进行连接
+    apiUrl: process.env.COMFYUI_API_URL || 'https://comfyui.oopshub.cn',
+    timeout: 30000, // 请求超时时间（毫秒）
+    workflowDir: path.join(__dirname, 'comfyui_workflows'),
     retryConfig: {
       maxRetries: 3,
-      retryDelay: 2000
+      retryDelay: 2000 // 重试延迟（毫秒）
     }
   }
 };

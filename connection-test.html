@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComfyUI 连接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background-color: #e7f3ff;
+            color: #004085;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ComfyUI 连接测试</h1>
+        <div id="status" class="status disconnected">正在检查连接...</div>
+        <div id="info" class="info"></div>
+        <button onclick="checkConnection()">重新检查</button>
+    </div>
+
+    <script>
+        async function checkConnection() {
+            const status = document.getElementById('status');
+            const info = document.getElementById('info');
+            
+            status.textContent = '正在检查连接...';
+            status.className = 'status disconnected';
+            info.textContent = '';
+            
+            try {
+                console.log('发送请求到 /comfyui/status');
+                const response = await fetch('/comfyui/status', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                console.log('请求完成，状态码:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('响应数据:', data);
+                
+                if (data.connected) {
+                    status.textContent = '已连接到 ComfyUI';
+                    status.className = 'status connected';
+                    info.innerHTML = `
+                        <strong>ComfyUI 连接信息:</strong><br>
+                        版本: ${data.version}<br>
+                        状态: ${data.status}<br>
+                        URL: ${data.url}<br>
+                        时间: ${data.timestamp}<br>
+                        HTTP 状态码: ${data.httpStatus}
+                    `;
+                } else {
+                    status.textContent = '未连接到 ComfyUI';
+                    status.className = 'status disconnected';
+                    info.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                console.error('检查连接失败:', error);
+                status.textContent = '连接检查失败';
+                status.className = 'status disconnected';
+                info.textContent = `错误信息: ${error.message}`;
+            }
+        }
+        
+        // 页面加载时检查连接
+        window.onload = checkConnection;
+    </script>
+</body>
+</html>
