@@ -10,12 +10,12 @@ app.use(cors()); // 添加CORS支持
 app.use(express.json()); // JSON请求体解析
 app.use(express.urlencoded({ extended: true })); // URL编码请求体解析
 
+// 注册图像代理路由（必须在路由配置之前，避免被404处理拦截）
+services.setupImageProxy(app);
+
 // 路由
 const routes = require('./routes');
 app.use('/', routes);
-
-// 注册图像代理路由
-services.setupImageProxy(app);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
