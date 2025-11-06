@@ -63,28 +63,7 @@ exports.checkComfyUIConnection = async (url) => {
     const isRelativePath = currentApiUrl.startsWith('/');
     console.log(`[${new Date().toISOString()}] 路径类型检查: ${isRelativePath ? '相对路径' : '绝对路径'}, 环境: ${process.env.NODE_ENV || 'development'}`);
     
-    // 对于相对路径，直接模拟成功（将在Vercel环境通过代理实际连接）
-    if (isRelativePath) {
-        console.log(`[${new Date().toISOString()}] 检测到相对路径，模拟连接成功（将在Vercel环境通过代理实际连接）`);
-        
-        const mockSuccessStatus = {
-            connected: true,
-            httpStatus: 200,
-            status: 'connected',
-            version: 'mock-version',
-            url: currentApiUrl,
-            timestamp: new Date().toISOString(),
-            isMock: true,
-            note: '相对路径将在Vercel环境中通过代理实际连接'
-        };
-        
-        // 更新缓存
-        connectionCache.lastCheck = now;
-        connectionCache.status = mockSuccessStatus;
-        
-        return mockSuccessStatus;
-    }
-    
+
     // 检查缓存
     if (connectionCache.lastCheck > now - connectionCache.expireTime && 
         connectionCache.status && 
