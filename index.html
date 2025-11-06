@@ -368,7 +368,7 @@
         console.log('准备提交图像生成任务请求...');
         const requestData = {
           prompt,
-          workflowName: 'test',
+          workflow: 'test',
           workflowPath: 'comfyui_workflows/test.json'
         };
         console.log('请求数据:', requestData);
@@ -496,21 +496,39 @@
                   isProxyUrl: imgUrl.includes('/comfyui/image-proxy')
                 });
                 
-                // 直接测试代理URL是否可访问
-                console.log('直接测试代理URL是否可访问...');
-                try {
-                  const testResponse = await fetch(imgUrl, { method: 'HEAD' });
-                  console.log(`代理URL测试结果: ${testResponse.status} ${testResponse.statusText}`);
-                } catch (testError) {
-                  console.error('代理URL测试失败:', testError);
-                }
+                // 优化：只使用一个图像对象进行预加载和最终显示
+                console.log('创建图像对象进行预加载...');
+                const preloadImg = new Image();
                 
-                // 创建新的图像对象进行测试加载
-                console.log('创建新图像对象进行预加载测试...');
-                const testImg = new Image();
-                testImg.onload = () => console.log('预加载测试成功！');
-                testImg.onerror = (err) => console.error('预加载测试失败:', err);
-                testImg.src = imgUrl;
+                // 设置图像加载超时处理
+                const timeoutId = setTimeout(() => {
+                  console.error('图像加载超时');
+                  alert('图像加载超时，请刷新页面重试');
+                  loadingPlaceholder.classList.add('hidden');
+                }, 120000); // 2分钟超时
+                
+                preloadImg.onload = () => {
+                  clearTimeout(timeoutId);
+                  console.log('图像预加载成功！现在设置到显示元素');
+                  // 预加载成功后，再设置给实际显示的元素
+                  resultImg.src = imgUrl;
+                  loadingPlaceholder.classList.add('hidden');
+                  resultBox.classList.remove('hidden');
+                };
+                
+                preloadImg.onerror = (error) => {
+                  clearTimeout(timeoutId);
+                  console.error('图像预加载失败详细信息:', {
+                    message: error.message,
+                    type: error.type,
+                    target: error.target?.src
+                  });
+                  alert('图像预加载失败，请检查网络连接或刷新页面重试');
+                  loadingPlaceholder.classList.add('hidden');
+                };
+                
+                // 开始加载图像
+                preloadImg.src = imgUrl;
                 
                 // 添加图像错误处理
                 resultImg.onerror = (error) => {
