@@ -2,20 +2,33 @@
 const isProduction = process.env.NODE_ENV === 'production';
 
 module.exports = {
-  port: 3000,
+  // 应用配置
+  app: {
+    port: process.env.PORT || 3000,
+    env: process.env.NODE_ENV || 'development'
+  },
+  
+  // 翻译服务配置
+  translation: {
+    // 这里可以配置不同的翻译服务
+    provider: 'youdao',
+    endpoint: 'https://openapi.youdao.com/api'
+  },
+  
+  // 网易有道翻译API配置
+  youdao: {
+    appKey: 'mBD80PCSZNYgP45c6qwUwgDWbsiycF',
+    appSecret: 'mBD80PCSZNYgP45c6qwUwgDWbsiycF'
+  },
+  
   database: {
     host: 'localhost',
     port: 27017,
     name: 'mydb'
   },
+  
   jwtSecret: 'your-secret-key',
-  translation: {
-    // 网易有道翻译API配置
-    provider: 'youdao',
-    appKey: 'mBD80PCSZNYgP45c6qwUwgDWbstycF', // 从截图中获取的应用密钥
-    appSecret: '在此处粘贴您的网易有道翻译API密钥',
-    endpoint: 'https://openapi.youdao.com/api'
-  },
+  
   comfyUI: {
     // 在生产环境中使用'/comfy'（通过Vercel代理），在开发环境中直接连接到实际服务器
     apiUrl: process.env.COMFYUI_API_URL || (isProduction ? '/comfy' : 'https://comfyui.oopshub.cn'),
