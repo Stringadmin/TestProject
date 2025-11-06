@@ -24,7 +24,19 @@
       "destination": "https://comfyui.oopshub.cn/:path*"
     },
     {
-      "source": "/comfyui/:path*",
+      "source": "/comfyui/status",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/submit",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/result",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/image-proxy",
       "destination": "/api/index.js"
     },
     {
