@@ -12,7 +12,7 @@ exports.generateWithComfyUI = async (req, res) => {
 
 exports.checkComfyUIStatus = async (req, res) => {
     try {
-        console.log('收到/checkComfyUIStatus请求');
+        console.log('收到/comfyui/status请求');
         const status = await comfyUIService.checkComfyUIConnection();
         console.log('ComfyUI连接检查结果:', status);
         // 手动构建JSON字符串，确保完全没有多余空格
