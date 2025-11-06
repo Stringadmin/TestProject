@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const config = require('../config');
 
 // 配置翻译服务类型
-const TRANSLATION_SERVICE = 'youdao'; // 可选: 'google', 'youdao', 'microsoft'
+const TRANSLATION_SERVICE = 'mock'; // 可选: 'google', 'youdao', 'microsoft'
 
 /**
  * 网易有道翻译服务
