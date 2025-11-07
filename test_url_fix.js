@@ -26,7 +26,7 @@ async function testUrlFix() {
     
     // 测试2: 模拟缺少协议的URL
     console.log('\n测试场景2: 缺少协议的URL');
-    config.comfyUI.apiUrl = 'comfyui.oopshub.cn';
+    config.comfyUI.apiUrl = '117.50.83.222:8188';
     console.log(`设置API URL为: ${config.comfyUI.apiUrl}`);
     
     try {

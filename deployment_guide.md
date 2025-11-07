@@ -35,7 +35,7 @@
 | Key | Value | 说明 |
 |-----|-------|------|
 | NODE_ENV | production | 设置运行环境为生产环境 |
-| COMFYUI_API_URL | https://comfyui.oopshub.cn/ | ComfyUI API的基础URL |
+| COMFYUI_API_URL | http://117.50.83.222:8188/ | ComfyUI API的基础URL |
 | COMFYUI_TIMEOUT | 180000 | 请求超时时间（毫秒） |
 
 ### 配置方法
@@ -52,7 +52,7 @@
 #### 配置说明
 
 1. **vercel.json配置**
-   - 添加了`rewrites`规则，将`/comfy/:path*`请求透明转发到`https://comfyui.oopshub.cn/:path*`
+   - 添加了`rewrites`规则，将`/comfy/:path*`请求透明转发到`http://117.50.83.222:8188/:path*`
    - 移除了原有的`routes`配置，改用`rewrites`和顶层`headers`配置
    - 保留了必要的CORS头信息，确保前端可以正常访问
 

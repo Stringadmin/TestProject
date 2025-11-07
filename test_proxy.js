@@ -10,7 +10,7 @@ async function testProxyConfiguration() {
     // 在本地环境中，我们直接测试ComfyUI服务是否可访问
     // 注意：此测试仅在服务器运行时有效
     console.log('测试1: 检查ComfyUI服务状态');
-    const statusResponse = await axios.get('https://comfyui.oopshub.cn/prompt', {
+    const statusResponse = await axios.get('http://117.50.83.222:8188/prompt', {
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json'

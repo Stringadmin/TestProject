@@ -31,7 +31,7 @@ async function debugURLIssue() {
       
       // 如果是相对路径，添加完整域名
       if (trimmedUrl.startsWith('/')) {
-        const fullUrl = `https://comfyui.oopshub.cn${trimmedUrl}`;
+        const fullUrl = `http://117.50.83.222:8188${trimmedUrl}`;
         console.log(`转换相对路径为完整URL: ${fullUrl}`);
         try {
           new URL(fullUrl);
@@ -109,7 +109,7 @@ async function debugURLIssue() {
   
   // 建议修复
   console.log('\n=== 建议修复 ===');
-  console.log('在config.js中确保comfyUI.apiUrl设置为: https://comfyui.oopshub.cn');
+  console.log('在config.js中确保comfyUI.apiUrl设置为: http://117.50.83.222:8188');
 }
 
 // 运行调试

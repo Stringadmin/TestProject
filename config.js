@@ -31,8 +31,8 @@ module.exports = {
   jwtSecret: 'your-secret-key',
   
   comfyUI: {
-    // 直接使用comfyui.oopshub.cn域名进行连接
-    apiUrl: process.env.COMFYUI_API_URL || (process.env.NODE_ENV === 'production' ? 'https://www.oopshub.cn/comfy' : 'https://comfyui.oopshub.cn'),
+    // 使用公网IP进行连接
+    apiUrl: process.env.COMFYUI_API_URL || (process.env.NODE_ENV === 'production' ? 'https://www.oopshub.cn/comfy' : 'http://117.50.83.222:8188'),
     timeout: 30000, // 请求超时时间（毫秒）
     workflowDir: path.join(__dirname, 'comfyui_workflows'),
     retryConfig: {

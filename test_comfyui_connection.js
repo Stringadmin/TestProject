@@ -15,7 +15,7 @@ async function testComfyUIConnection() {
     // 如果是相对路径，使用Cloudflare隧道的完整URL进行测试
     if (apiUrl.startsWith('/')) {
       // 尝试直接使用主域名
-      apiUrl = `https://comfyui.oopshub.cn`;
+      apiUrl = `http://117.50.83.222:8188`;
       console.log(`注意: 测试时使用完整URL: ${apiUrl}`);
     }
     

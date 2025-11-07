@@ -47,7 +47,7 @@ testProductionConfig().then(success => {
     console.log('✅ Vercel部署后将能够正确连接到ComfyUI服务');
   } else {
     console.log('❌ 请检查Cloudflare隧道是否正常运行');
-    console.log('❌ 确认域名comfyui.oopshub.cn是否已正确配置');
+    console.log('❌ 确认IP地址117.50.83.222:8188是否已正确配置');
   }
   process.exit(success ? 0 : 1);
 });
