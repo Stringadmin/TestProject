@@ -21,7 +21,7 @@
   "rewrites": [
     {
       "source": "/comfy/:path*",
-      "destination": "http://117.50.83.222:8188/:path*"
+      "destination": "http://comfyui.oopshub.cn:8188/:path*"
     },
     {
       "source": "/comfyui/status",
