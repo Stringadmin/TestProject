@@ -716,7 +716,7 @@ exports.setupImageProxy = (app) => {
                 hasType: !!type
             });
             
-            if (!filename || !subfolder || !type) {
+            if (!filename || !type) {
                 console.log(`[${new Date().toISOString()}] 图像代理参数错误: 缺少必要参数`);
                 return res.status(400).json({ error: '缺少必要的图像参数' });
             }
