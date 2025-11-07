@@ -18,8 +18,8 @@ module.exports = {
   
   // 网易有道翻译API配置
   youdao: {
-    appKey: 'mBD80PCSZNYgP45c6qwUwgDWbsiycF',
-    appSecret: 'mBD80PCSZNYgP45c6qwUwgDWbsiycF'
+    appKey: '4eac2ce956de7729',
+    appSecret: 'mBfD80PCSZNYgP45c6qrwUwqDWbsiycF'
   },
   
   database: {

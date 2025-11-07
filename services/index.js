@@ -3,6 +3,12 @@ const fs = require('fs');
 const path = require('path');
 const FormData = require('form-data');
 const config = require('../config');
+const { translate } = require('./translationService');
+
+// 检测文本是否包含中文字符
+function containsChinese(text) {
+  return /[\u4e00-\u9fa5]/.test(text);
+}
 
 // 连接状态缓存 (5秒有效期)
 const connectionCache = {
@@ -254,11 +260,26 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
         // 3. 注入提示词到工作流（如果提供了prompt且为API Prompt格式）
         if (isAPIPrompt && typeof prompt === 'string' && prompt.trim()) {
             try {
+                let processedPrompt = prompt.trim();
+                
+                // 检测是否包含中文，如果是则翻译成英文
+                if (containsChinese(processedPrompt)) {
+                    console.log('[ComfyUI Request] 检测到中文提示词，开始翻译为英文...');
+                    try {
+                        const translatedText = await translate(processedPrompt, 'zh', 'en');
+                        console.log(`[ComfyUI Request] 翻译结果: ${translatedText}`);
+                        processedPrompt = translatedText;
+                    } catch (translationError) {
+                        console.error('[ComfyUI Request] 翻译失败，使用原文:', translationError.message);
+                        // 翻译失败时使用原文
+                    }
+                }
+                
                 for (const nodeId of Object.keys(workflow)) {
                     const node = workflow[nodeId];
                     if (node && typeof node === 'object' && /CLIPTextEncode/i.test(node.class_type)) {
                         if (!node.inputs) node.inputs = {};
-                        node.inputs.text = prompt.trim();
+                        node.inputs.text = processedPrompt;
                     }
                 }
                 console.log('[ComfyUI Request] 提示词已注入到CLIPTextEncode节点');
