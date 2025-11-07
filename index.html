@@ -160,7 +160,7 @@
           
           <!-- 图片操作按钮 -->
           <div class="flex justify-center gap-3 mt-4 pb-2">
-            <button class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+            <button id="save-btn" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
               <i class="fa-solid fa-download mr-1.5"></i>保存
             </button>
             <button class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
@@ -591,6 +591,37 @@
       }
     `;
     document.head.appendChild(style);
+
+    // 保存按钮功能
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const imageUrl = resultImg.src;
+        // 检查是否有有效的图片源
+        if (!imageUrl || resultImg.naturalWidth === 0) {
+          alert('没有可供保存的图片。');
+          return;
+        }
+
+        const link = document.createElement('a');
+        link.href = imageUrl;
+
+        // 从URL中提取文件名，如果失败则使用默认文件名
+        try {
+          // 对于相对路径，需要提供一个base URL来正确解析
+          const url = new URL(imageUrl, window.location.origin);
+          const filename = new URLSearchParams(url.search).get('filename');
+          link.download = filename || `oops-hub-image-${Date.now()}.png`;
+        } catch (e) {
+          link.download = `oops-hub-image-${Date.now()}.png`;
+        }
+
+        // 触发下载
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
   </script>
 </body>
 </html>
