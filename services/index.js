@@ -188,6 +188,7 @@ exports.uploadImageToComfyUI = async (imageBuffer, filename) => {
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
         // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
+        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_URL: ${process.env.COMFYUI_URL}`);
         console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
         console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
         
@@ -288,6 +289,7 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
         // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
+        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_URL: ${process.env.COMFYUI_URL}`);
         console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
         console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
         
@@ -582,6 +584,7 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
         // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
+        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_URL: ${process.env.COMFYUI_URL}`);
         console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
         console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
         

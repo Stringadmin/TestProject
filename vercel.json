@@ -62,6 +62,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
+    "COMFYUI_URL": "/comfy",
     "COMFYUI_API_URL": "/comfy"
   },
   "headers": [
