@@ -559,6 +559,7 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     const fullUrl = `${apiUrl}/${COMFYUI_CONFIG.PROMPT_ENDPOINT}`;
     
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 准备提交任务到ComfyUI: ${fullUrl}`);
+    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 即将发送的完整工作流: ${JSON.stringify(payload, null, 2)}`);
     
     logger.logRequest('POST', fullUrl, payload, { 'Content-Type': 'application/json' });
     let response;
