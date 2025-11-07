@@ -59,9 +59,14 @@ exports.checkComfyUIConnection = async (url) => {
     
 
     
-    // 特殊处理相对路径（Vercel环境）- 移到缓存检查之前
+    // 特殊处理相对路径（Vercel环境）- 保留相对路径以配合rewrites规则
     const isRelativePath = currentApiUrl.startsWith('/');
     console.log(`[${new Date().toISOString()}] 路径类型检查: ${isRelativePath ? '相对路径' : '绝对路径'}, 环境: ${process.env.NODE_ENV || 'development'}`);
+    
+    // 重要：在Vercel生产环境中，确保使用相对路径进行连接测试
+    if (isRelativePath && process.env.NODE_ENV === 'production') {
+        console.log(`[${new Date().toISOString()}] 生产环境：使用相对路径 ${currentApiUrl} 进行连接测试`);
+    }
     
 
     // 检查缓存
@@ -182,7 +187,9 @@ exports.uploadImageToComfyUI = async (imageBuffer, filename) => {
         // 获取最新的API URL配置
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
-
+        // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
+        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
+        console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
         
         // 默认值
         if (!apiUrl) {
@@ -280,7 +287,9 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
         // 获取最新的API URL配置
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
-
+        // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
+        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
+        console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
         
         // 默认值
         if (!apiUrl) {
@@ -572,7 +581,9 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
         // 获取最新的API URL配置
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
         
-
+        // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
+        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
+        console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
         
         // 默认值
         if (!apiUrl) {
