@@ -503,24 +503,50 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     const isUIPrompt = workflow && Array.isArray(workflow.nodes);
     const isAPIPrompt = workflow && !isUIPrompt && Object.values(workflow).some(v => v && typeof v === 'object' && v.class_type && v.inputs);
     console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 工作流类型检查:`, { isUIPrompt, isAPIPrompt });
-    
+
     if (isUIPrompt && !isAPIPrompt) {
         console.error(`[${new Date().toISOString()}] submitComfyUIPrompt - 工作流格式错误，为UI工作流而非API Prompt格式`);
         throw new Error('工作流文件为UI工作流格式，需转换为API Prompt格式（包含class_type/inputs结构）。');
     }
-    
+
     if (isAPIPrompt && typeof prompt === 'string' && prompt.trim()) {
         try {
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 开始注入提示词到工作流`);
-            for (const nodeId of Object.keys(workflow)) {
-                const node = workflow[nodeId];
-                if (node && typeof node === 'object' && /CLIPTextEncode/i.test(node.class_type)) {
-                    if (!node.inputs) node.inputs = {};
-                    node.inputs.text = prompt.trim();
-                    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 提示词已注入节点 ${nodeId}`);
+            const trimmedPrompt = prompt.trim();
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 开始智能注入提示词...`);
+            // 寻找采样器节点（如 KSampler）
+            const samplerNodeId = Object.keys(workflow).find(id => workflow[id].class_type.includes('Sampler') && workflow[id].inputs.positive);
+
+            let injected = false;
+            if (samplerNodeId) {
+                const samplerNode = workflow[samplerNodeId];
+                // 从采样器输入中获取正面提示词节点的ID
+                const positiveInput = samplerNode.inputs.positive;
+                if (Array.isArray(positiveInput) && positiveInput.length > 0) {
+                    const positiveNodeId = positiveInput[0];
+                    const positiveNode = workflow[positiveNodeId];
+                    // 检查连接的节点是否是文本编码器并注入提示
+                    if (positiveNode && /CLIPTextEncode/i.test(positiveNode.class_type)) {
+                        if (!positiveNode.inputs) positiveNode.inputs = {};
+                        positiveNode.inputs.text = trimmedPrompt;
+                        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 成功：提示词已注入到指定的正面提示节点 ${positiveNodeId}。`);
+                        injected = true;
+                    }
                 }
             }
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 提示词注入完成`);
+
+            // 如果找不到标准路径，则回退到旧逻辑
+            if (!injected) {
+                console.warn(`[${new Date().toISOString()}] submitComfyUIPrompt - 警告：找不到标准的 Sampler -> CLIPTextEncode 路径。使用回退方法。`);
+                const fallbackNodeId = Object.keys(workflow).find(id => /CLIPTextEncode/i.test(workflow[id].class_type));
+                if (fallbackNodeId) {
+                    const fallbackNode = workflow[fallbackNodeId];
+                    if (!fallbackNode.inputs) fallbackNode.inputs = {};
+                    fallbackNode.inputs.text = trimmedPrompt;
+                    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 回退：提示词已注入到找到的第一个 CLIPTextEncode 节点 ${fallbackNodeId}。`);
+                } else {
+                    console.error(`[${new Date().toISOString()}] submitComfyUIPrompt - 错误：找不到任何 CLIPTextEncode 节点来注入提示词。`);
+                }
+            }
         } catch (e) {
             console.warn(`[${new Date().toISOString()}] submitComfyUIPrompt - 提示词注入失败:`, e.message);
         }
