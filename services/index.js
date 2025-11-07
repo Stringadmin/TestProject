@@ -57,17 +57,12 @@ exports.checkComfyUIConnection = async (url) => {
     let currentApiUrl = url || (config.comfyUI.apiUrl || '').trim();
     console.log(`[${new Date().toISOString()}] 使用的API URL: ${currentApiUrl}`);
     
-
-    
     // 特殊处理相对路径（Vercel环境）- 保留相对路径以配合rewrites规则
     const isRelativePath = currentApiUrl.startsWith('/');
     console.log(`[${new Date().toISOString()}] 路径类型检查: ${isRelativePath ? '相对路径' : '绝对路径'}, 环境: ${process.env.NODE_ENV || 'development'}`);
     
-    // 重要：在Vercel生产环境中，确保使用相对路径进行连接测试
-    if (isRelativePath && process.env.NODE_ENV === 'production') {
-        console.log(`[${new Date().toISOString()}] 生产环境：使用相对路径 ${currentApiUrl} 进行连接测试`);
-    }
-    
+    // 所有环境都使用配置的URL，不再强制切换路径
+    console.log(`[${new Date().toISOString()}] 当前使用的API URL: ${currentApiUrl}, 环境: ${process.env.NODE_ENV || 'development'}`);
 
     // 检查缓存
     if (connectionCache.lastCheck > now - connectionCache.expireTime && 
@@ -84,42 +79,36 @@ exports.checkComfyUIConnection = async (url) => {
         
         // 尝试多种连接方式，增加可靠性
         let response;
-        let attemptUrl = originalUrl;
+        let attemptUrl = currentApiUrl;
+        
+        // 创建axios实例，避免全局配置影响
+        const axiosInstance = axios.create();
+        
+        // 设置超时和错误处理
+        axiosInstance.defaults.timeout = 5000;
+        axiosInstance.defaults.validateStatus = function (status) {
+            // 接受任何状态码，只要连接成功就认为服务正常
+            return status >= 200 && status < 600;
+        };
         
         // 尝试1: 直接访问根路径
         try {
             console.log(`[${new Date().toISOString()}] 尝试连接1: ${attemptUrl}`);
-            response = await axios.get(attemptUrl, {
-                timeout: 5000,
-                validateStatus: function (status) {
-                    // 接受任何状态码，只要连接成功就认为服务正常
-                    return status >= 200 && status < 600;
-                }
-            });
+            response = await axiosInstance.get(attemptUrl);
         } catch (firstAttemptError) {
             // 尝试2: 添加斜杠
-            if (!originalUrl.endsWith('/')) {
-                attemptUrl = originalUrl + '/';
+            if (!currentApiUrl.endsWith('/')) {
+                attemptUrl = currentApiUrl + '/';
                 console.log(`[${new Date().toISOString()}] 尝试连接2: ${attemptUrl} (添加了斜杠)`);
                 try {
-                    response = await axios.get(attemptUrl, {
-                        timeout: 5000,
-                        validateStatus: function (status) {
-                            return status >= 200 && status < 600;
-                        }
-                    });
+                    response = await axiosInstance.get(attemptUrl);
                 } catch (secondAttemptError) {
                     // 尝试3: 直接访问queue接口
-                    attemptUrl = originalUrl.endsWith('/') ? 
-                        `${originalUrl}queue` : 
-                        `${originalUrl}/queue`;
+                    attemptUrl = currentApiUrl.endsWith('/') ? 
+                        `${currentApiUrl}queue` : 
+                        `${currentApiUrl}/queue`;
                     console.log(`[${new Date().toISOString()}] 尝试连接3: ${attemptUrl} (queue接口)`);
-                    response = await axios.get(attemptUrl, {
-                        timeout: 5000,
-                        validateStatus: function (status) {
-                            return status >= 200 && status < 600;
-                        }
-                    });
+                    response = await axiosInstance.get(attemptUrl);
                 }
             } else {
                 throw firstAttemptError;
