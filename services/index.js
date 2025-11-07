@@ -662,7 +662,7 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
                         });
                         
                         // 为可选字段提供默认值，确保生成的URL不会出现undefined
-                        const proxyUrl = `/comfyui/image-proxy?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || '')}&type=${encodeURIComponent(img.type || 'output')}`;
+                        const proxyUrl = `/comfy/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || '')}&type=${encodeURIComponent(img.type || 'output')}`;
                         console.log(`[${new Date().toISOString()}] fetchComfyUIResultOnce - 构建的代理图像URL:`, proxyUrl);
                         
                         images.push({
