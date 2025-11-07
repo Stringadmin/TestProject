@@ -31,8 +31,8 @@ module.exports = {
   jwtSecret: 'your-secret-key',
   
   comfyUI: {
-    // Vercel环境使用相对路径，其他环境使用域名（无需端口号）
-    apiUrl: process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || (process.env.NODE_ENV === 'production' ? '/comfy' : 'http://comfyui.oopshub.cn'),
+    // Vercel环境使用相对路径，其他环境使用公网IP地址
+    apiUrl: process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || (process.env.NODE_ENV === 'production' ? '/comfy' : 'http://117.50.83.222:8188'),
     timeout: 30000, // 请求超时时间（毫秒）
     workflowDir: path.join(__dirname, 'comfyui_workflows'),
     retryConfig: {

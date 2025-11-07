@@ -21,7 +21,7 @@
   "rewrites": [
     {
       "source": "/comfy/:path*",
-      "destination": "http://comfyui.oopshub.cn/:path*"
+      "destination": "http://117.50.83.222:8188/:path*"
     },
     {
       "source": "/comfyui/status",
@@ -61,9 +61,8 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production",
-    "COMFYUI_URL": "/comfy",
-    "COMFYUI_API_URL": "/comfy"
+    "NODE_ENV": "production"
+  
   },
   "headers": [
     {
