@@ -183,44 +183,46 @@
   </footer>
 
   <script>
-    // API基础路径 - 在本地开发环境中使用根路径
+    // Helper to generate a unique client ID
+    function getClientId() {
+        if (!localStorage.getItem('clientId')) {
+            localStorage.setItem('clientId', 'client-' + Math.random().toString(36).substring(2, 15));
+        }
+        return localStorage.getItem('clientId');
+    }
+
+    // Element selectors
     const genBtn = document.getElementById('gen');
     const promptInput = document.getElementById('prompt');
     const resultBox = document.getElementById('box');
     const resultImg = document.getElementById('res');
     const loadingPlaceholder = document.getElementById('loading-placeholder');
+    const loadingText = loadingPlaceholder.querySelector('p');
     const examplePrompts = document.querySelectorAll('.example-prompt');
     const statusText = document.getElementById('status-text');
-    
-    // 检查ComfyUI连接状态并显示
-    async function checkComfyUIConnection() {
-      console.log('开始检查ComfyUI连接状态...');
-      try {
-        // 使用Promise.race实现超时控制
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('请求超时')), 10000);
-        });
-        
-        const fetchPromise = fetch('/comfyui/status', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
-        
-        console.log('发送GET请求到: /comfyui/status');
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        console.log(`连接状态请求完成，状态码: ${response.status}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+    const saveBtn = document.getElementById('save-btn');
+    const testBtn = document.getElementById('testBtn');
+
+    const originalBtnContent = '<span>立即生成设计图</span><i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>';
+    let pollingInterval = null;
+
+    // Function to reset UI to initial state
+    function cleanupAndReset() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
         }
-        
+        genBtn.disabled = false;
+        genBtn.innerHTML = originalBtnContent;
+        loadingPlaceholder.classList.add('hidden');
+    }
+
+    // Check ComfyUI connection status
+    async function checkComfyUIConnection() {
+      try {
+        const response = await fetch('/comfyui/status');
+        if (!response.ok) throw new Error('Network response was not ok.');
         const data = await response.json();
-        console.log('连接状态响应数据:', data);
-        
         if (data.connected) {
           statusText.textContent = '已连接';
           statusText.className = 'font-medium text-green-600';
@@ -229,356 +231,161 @@
           statusText.className = 'font-medium text-red-600';
         }
       } catch (error) {
-        console.error('检查ComfyUI连接失败详细信息:', {
-          message: error.message,
-          name: error.name,
-          stack: error.stack
-        });
-        // 即使连接检查失败，也要给用户一个积极的状态，让他们可以尝试生成图像
-        statusText.textContent = '可尝试生成';
-        statusText.className = 'font-medium text-blue-600';
+        console.error('Failed to check ComfyUI connection:', error);
+        statusText.textContent = '状态未知';
+        statusText.className = 'font-medium text-yellow-600';
       }
     }
-    
-    // 页面加载时立即检查连接状态
-    checkComfyUIConnection();
-    // 每30秒自动更新连接状态
-    setInterval(checkComfyUIConnection, 30000);
 
-    // 示例提示词点击填充
-    examplePrompts.forEach(example => {
-      example.addEventListener('click', () => {
-        promptInput.value = example.textContent.trim();
-        promptInput.focus();
-      });
-    });
-
-    // 全局错误监听
-      window.addEventListener('error', (event) => {
-        console.error('全局未捕获错误:', {
-          message: event.message,
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-          error: event.error
-        });
-      });
-      
-      window.addEventListener('unhandledrejection', (event) => {
-        console.error('全局未处理Promise拒绝:', {
-          reason: event.reason
-        });
-      });
-      
-      // 测试按钮事件处理函数 - 极简版本
-      const testBtn = document.getElementById('testBtn');
-      console.log('测试按钮DOM元素:', testBtn);
-      
-      if (testBtn) {
-        testBtn.addEventListener('click', async () => {
-          console.log('===== 测试按钮被点击！执行极简请求测试 =====');
-          
-          try {
-            // 直接发送POST请求到后端
-            const testPrompt = '测试图像生成';
-            const requestData = {
-              prompt: testPrompt,
-              workflow: 'test', // 改为workflow，与后端控制器参数名称匹配
-              workflowPath: 'comfyui_workflows/test.json'
-            };
-            
-            console.log('发送测试请求数据:', requestData);
-            
-            const response = await fetch('/comfyui/submit', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(requestData)
-            });
-            
-            console.log('测试请求响应状态:', response.status);
-            
-            const data = await response.json();
-            console.log('测试请求响应数据:', data);
-            
-            alert(`测试请求结果:\n状态码: ${response.status}\n成功: ${data.success || false}\npromptId: ${data.data?.promptId || '未获取'}`);
-          } catch (error) {
-            console.error('测试请求失败:', error);
-            alert('测试请求失败: ' + error.message);
-          }
-        });
-      } else {
-        console.error('测试按钮元素未找到！');
-      }
-    
-    console.log('生成按钮DOM元素:', genBtn);
-    if (!genBtn) {
-      console.error('生成按钮元素未找到！');
-    } else {
-      console.log('生成按钮元素找到，准备绑定事件监听器');
-    }
-    
-    // 生成按钮点击事件
-    console.log('绑定生成按钮点击事件');
+    // Main Generate button click handler
     genBtn.addEventListener('click', async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      console.log('生成按钮点击事件触发！时间戳:', Date.now());
-      console.log('=== 生成按钮被点击！开始处理图像生成请求 ===');
-      
-      // 立即显示加载状态
-      genBtn.disabled = true;
-      genBtn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
-      
-      const prompt = promptInput.value.trim();
-      console.log(`用户输入的提示词: "${prompt}"`);
-      
-      if (!prompt) {
-        console.log('提示词为空，显示抖动动画');
-        // 提示词为空时的微动效提醒
-        promptInput.classList.add('border-red-300');
-        promptInput.classList.add('animate-shake');
-        setTimeout(() => {
-          promptInput.classList.remove('border-red-300', 'animate-shake');
-          genBtn.disabled = false;
-          genBtn.innerHTML = '生成图像';
-        }, 1000);
-        return;
-      }
-      
-      console.log('提示词有效，准备提交图像生成任务');
-      
-      // 显示结果区域
-      resultBox.classList.remove('hidden');
-      resultBox.classList.add('opacity-0', 'scale-95');
-      loadingPlaceholder.classList.remove('hidden');
-      resultImg.classList.add('hidden');
-
-      try {
-        console.log('=== 进入生成函数主要逻辑 ===');
-        // 简化超时控制
-        console.log('创建超时控制器');
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log('客户端120秒超时，中止请求');
-          controller.abort();
-        }, 120000);
-
-        // Step1: 提交任务，获取 promptId（短请求）
-        console.log('准备提交图像生成任务请求...');
-        const requestData = {
-          prompt,
-          workflow: 'test',
-          workflowPath: 'comfyui_workflows/test.json'
-        };
-        console.log('请求数据:', requestData);
+        event.preventDefault();
         
-        const submitUrl = '/comfyui/submit';
-        console.log(`发送POST请求到: ${submitUrl}`);
-        
-        let submitData = null;
-        try {
-          console.log('构建fetch请求配置...');
-          const fetchOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData),
-            signal: controller.signal
-          };
-          console.log('fetch请求配置:', fetchOptions);
-          
-          console.log('开始发送fetch请求...');
-          console.log('fetch API是否可用:', typeof fetch === 'function');
-          
-          const submitRes = await fetch(submitUrl, fetchOptions);
-          
-          console.log(`请求完成，状态码: ${submitRes.status}, 状态文本: ${submitRes.statusText}`);
-          console.log('使用工作流: comfyui_workflows/test.json');
-          
-          // 清除超时定时器
-          clearTimeout(timeoutId);
-          console.log('超时定时器已清除');
-          
-          try {
-            console.log('开始解析JSON响应...');
-            submitData = await submitRes.json();
-            console.log('响应数据:', submitData);
-          } catch (jsonError) {
-            console.error('解析JSON响应失败:', { name: jsonError.name, message: jsonError.message });
-            throw new Error(`解析响应失败: ${jsonError.message}`);
-          }
-          
-          if (!submitRes.ok) {
-            console.error('HTTP错误:', submitRes.status, submitRes.statusText);
-            throw new Error(submitData?.message || `HTTP错误: ${submitRes.status}`);
-          }
-          
-          if (!submitData || !submitData.success || !submitData.data?.promptId) {
-            console.error('业务错误:', submitData);
-            throw new Error(submitData?.message || '提交生成任务失败或缺少必要的promptId');
-          }
-          
-          console.log('任务提交成功，获取到promptId:', submitData.data.promptId);
-         } catch (requestError) {
-           console.error('提交请求失败:', { 
-             name: requestError.name, 
-             message: requestError.message,
-             isAbortError: requestError.name === 'AbortError'
-           });
-           // 清除超时定时器
-           clearTimeout(timeoutId);
-           throw requestError;
-         }
-         
-         if (!submitData || !submitData.data || !submitData.data.promptId) {
-           console.error('严重错误: submitData或promptId未定义');
-           throw new Error('内部错误: 无法获取任务ID');
-         }
-         
-         const promptId = submitData.data.promptId;
-         console.log('准备开始轮询结果，promptId:', promptId);
-
-        // Step2: 前端轮询查询结果（每2秒一次，最多120秒）
-          const startedAt = Date.now();
-          const POLL_INTERVAL = 2000;
-          const MAX_DURATION = 120000; // 2分钟客户端等待上限
-          let ready = false;
-          let pollCount = 0;
-          
-          console.log(`开始轮询查询结果，promptId: ${promptId}`);
-          
-          while (!ready && Date.now() - startedAt < MAX_DURATION) {
-            pollCount++;
-            console.log(`轮询 ${pollCount} 次，已等待 ${Math.floor((Date.now() - startedAt)/1000)} 秒`);
-            
-            await new Promise(r => setTimeout(r, POLL_INTERVAL));
-            
-            try {
-              const rController = new AbortController();
-              const rTimeout = setTimeout(() => rController.abort(), 10000);
-              const resultUrl = `/comfyui/result?promptId=${encodeURIComponent(promptId)}`;
-              console.log(`发起结果查询请求: ${resultUrl}`);
-              
-              const resultRes = await fetch(resultUrl, {
-                method: 'GET',
-                signal: rController.signal
-              });
-              
-              clearTimeout(rTimeout);
-              console.log(`结果查询响应状态: ${resultRes.status}`);
-              
-              if (!resultRes.ok) {
-                console.log(`查询失败，状态码: ${resultRes.status}, 继续轮询...`);
-                continue;
-              }
-              
-              const resultData = await resultRes.json();
-              console.log(`查询结果数据结构:`, {
-                success: resultData.success,
-                dataExists: !!resultData.data,
-                isReady: resultData.data?.ready,
-                hasImages: resultData.data?.images?.length > 0,
-                imageCount: resultData.data?.images?.length || 0
-              });
-              
-              if (resultData.success && resultData.data?.ready && resultData.data.images?.length) {
-                ready = true;
-                console.log('检测到生成完成的图像，准备显示');
-                
-                const imageInfo = resultData.data.images[0];
-                const imgUrl = imageInfo.url;
-                
-                console.log('图像生成成功，详细信息:', {
-                  url: imgUrl,
-                  filename: imageInfo.filename,
-                  subfolder: imageInfo.subfolder,
-                  type: imageInfo.type,
-                  isProxyUrl: imgUrl.includes('/comfyui/image-proxy')
-                });
-                
-                // 优化：只使用一个图像对象进行预加载和最终显示
-                console.log('创建图像对象进行预加载...');
-                const preloadImg = new Image();
-                
-                // 设置图像加载超时处理
-                const timeoutId = setTimeout(() => {
-                  console.error('图像加载超时');
-                  alert('图像加载超时，请刷新页面重试');
-                  loadingPlaceholder.classList.add('hidden');
-                }, 120000); // 2分钟超时
-                
-                preloadImg.onload = () => {
-                  clearTimeout(timeoutId);
-                  console.log('图像预加载成功！现在设置到显示元素');
-                  // 预加载成功后，再设置给实际显示的元素
-                  resultImg.src = imgUrl;
-                  loadingPlaceholder.classList.add('hidden');
-                  resultBox.classList.remove('hidden');
-                };
-                
-                preloadImg.onerror = (error) => {
-                  clearTimeout(timeoutId);
-                  console.error('图像预加载失败详细信息:', {
-                    message: error.message,
-                    type: error.type,
-                    target: error.target?.src
-                  });
-                  alert('图像预加载失败，请检查网络连接或刷新页面重试');
-                  loadingPlaceholder.classList.add('hidden');
-                };
-                
-                // 开始加载图像
-                preloadImg.src = imgUrl;
-                
-                // 添加图像错误处理
-                resultImg.onerror = (error) => {
-                  console.error('图像加载失败详细信息:', {
-                    message: error.message,
-                    type: error.type,
-                    target: error.target?.src,
-                    currentSrc: resultImg.currentSrc
-                  });
-                  alert('图像加载失败，请检查网络连接或刷新页面重试');
-                  loadingPlaceholder.classList.add('hidden');
-                };
-                
-                resultImg.src = imgUrl;
-                console.log('图像URL已设置，等待加载完成...');
-                
-                resultImg.onload = () => {
-                  console.log('图像加载成功！图像尺寸:', {
-                    width: resultImg.width,
-                    height: resultImg.height
-                  });
-                  loadingPlaceholder.classList.add('hidden');
-                  resultImg.classList.remove('hidden');
-                  setTimeout(() => {
-                    resultBox.classList.remove('opacity-0', 'scale-95');
-                  }, 100);
-                };
-              }
-            } catch (error) {
-              console.error('轮询过程中发生错误:', error);
-            }
-          }
-        if (!ready) {
-          throw new Error('在预设时间内未获取到生成结果，请稍后在“历史记录”中查看或重试');
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+            promptInput.classList.add('border-red-300', 'animate-shake');
+            setTimeout(() => promptInput.classList.remove('border-red-300', 'animate-shake'), 1000);
+            return;
         }
 
-      } catch (error) {
-        const msg = error.name === 'AbortError' 
-          ? '客户端等待超时（>120秒）。请检查 ComfyUI 是否运行、工作流是否有图片输出或尝试重试。' 
-          : (error.message || '生成失败，请重试');
-        alert(msg);
-        loadingPlaceholder.classList.add('hidden');
-        resultBox.classList.add('hidden');
-      } finally {
-        // 恢复按钮状态
-        genBtn.disabled = false;
-        genBtn.innerHTML = '<span>立即生成设计图</span><i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>';
-      }
+        genBtn.disabled = true;
+        let currentJobId = null;
+
+        try {
+            // Step 1: Translate prompt if it contains Chinese characters
+            const containsChinese = /[\u4e00-\u9fa5]/.test(prompt);
+            let translatedPrompt = prompt;
+
+            if (containsChinese) {
+                genBtn.innerHTML = '<span><i class="fa-solid fa-language mr-2"></i>正在翻译...</span>';
+                const translateResponse = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: prompt })
+                });
+                if (!translateResponse.ok) throw new Error('翻译失败');
+                const translationResult = await translateResponse.json();
+                translatedPrompt = translationResult.data.translatedText;
+            }
+
+            // Step 2: Submit job to the queue
+            genBtn.innerHTML = '<span><i class="fa-solid fa-paper-plane mr-2"></i>正在提交...</span>';
+            const submitResponse = await fetch('/queue/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: translatedPrompt, workflow: 'test' })
+            });
+
+            if (!submitResponse.ok) throw new Error('提交任务失败');
+            const submitResult = await submitResponse.json();
+            currentJobId = submitResult.data.jobId;
+
+            // Show loading state
+            resultBox.classList.remove('opacity-0', 'scale-95');
+            loadingPlaceholder.classList.remove('hidden');
+            loadingText.textContent = '已提交，等待处理...';
+            resultImg.classList.add('hidden');
+            resultImg.src = '';
+
+            // Step 3: Poll for job status
+            pollingInterval = setInterval(async () => {
+                if (!currentJobId) return;
+
+                try {
+                    const statusResponse = await fetch(`/queue/status?jobId=${currentJobId}`);
+                    if (!statusResponse.ok) {
+                        if (statusResponse.status === 404) {
+                            clearInterval(pollingInterval);
+                            alert('任务不存在或已过期');
+                            cleanupAndReset();
+                        }
+                        return;
+                    }
+
+                    const statusResult = await statusResponse.json();
+                    const job = statusResult.data;
+
+                    switch (job.status) {
+                        case 'pending':
+                            genBtn.innerHTML = `<span><i class="fa-solid fa-clock-rotate-left mr-2"></i>排队中 #${job.position}</span>`;
+                            loadingText.textContent = `排队中，您前面还有 ${job.position - 1} 个任务...`;
+                            break;
+                        case 'processing':
+                            genBtn.innerHTML = '<span><div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 处理中...</span>';
+                            loadingText.textContent = '正在生成设计图，请稍候...';
+                            break;
+                        case 'completed':
+                            clearInterval(pollingInterval);
+                            genBtn.innerHTML = '<span><i class="fa-solid fa-check mr-2"></i>已完成</span>';
+                            
+                            if (job.result && job.result.generatedImages && job.result.generatedImages.length > 0) {
+                                const imageUrl = job.result.generatedImages[0];
+                                resultImg.onload = () => {
+                                    loadingPlaceholder.classList.add('hidden');
+                                    resultImg.classList.remove('hidden');
+                                };
+                                resultImg.onerror = () => {
+                                    alert('图片加载失败，请检查链接或网络。');
+                                    cleanupAndReset();
+                                };
+                                resultImg.src = imageUrl;
+                            } else {
+                                alert('未生成任何图片');
+                                cleanupAndReset();
+                            }
+                            
+                            setTimeout(cleanupAndReset, 3000);
+                            break;
+                        case 'failed':
+                            clearInterval(pollingInterval);
+                            alert(`任务失败: ${job.error}`);
+                            cleanupAndReset();
+                            break;
+                    }
+                } catch (pollError) {
+                    console.error('轮询错误:', pollError);
+                }
+            }, 2500);
+
+        } catch (error) {
+            alert(`发生错误: ${error.message}`);
+            cleanupAndReset();
+        }
     });
 
-    // 添加输入框抖动动画样式
+    // Save button functionality
+    saveBtn.addEventListener('click', () => {
+        const imageUrl = resultImg.src;
+        if (!imageUrl || resultImg.naturalWidth === 0) {
+            alert('没有可供保存的图片。');
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `oops-hub-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    
+    // Example prompts functionality
+    examplePrompts.forEach(example => {
+        example.addEventListener('click', () => {
+            promptInput.value = example.textContent.trim();
+            promptInput.focus();
+        });
+    });
+
+    // Initial connection check and periodic checks
+    checkComfyUIConnection();
+    setInterval(checkComfyUIConnection, 30000);
+
+    // Hide the test button as it's no longer needed for the main flow
+    if(testBtn) {
+      testBtn.style.display = 'none';
+    }
+    
+    // Add shake animation style
     const style = document.createElement('style');
     style.textContent = `
       @keyframes shake {
@@ -586,42 +393,9 @@
         10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
         20%, 40%, 60%, 80% { transform: translateX(3px); }
       }
-      .animate-shake {
-        animation: shake 0.5s ease-in-out;
-      }
+      .animate-shake { animation: shake 0.5s ease-in-out; }
     `;
     document.head.appendChild(style);
-
-    // 保存按钮功能
-    const saveBtn = document.getElementById('save-btn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        const imageUrl = resultImg.src;
-        // 检查是否有有效的图片源
-        if (!imageUrl || resultImg.naturalWidth === 0) {
-          alert('没有可供保存的图片。');
-          return;
-        }
-
-        const link = document.createElement('a');
-        link.href = imageUrl;
-
-        // 从URL中提取文件名，如果失败则使用默认文件名
-        try {
-          // 对于相对路径，需要提供一个base URL来正确解析
-          const url = new URL(imageUrl, window.location.origin);
-          const filename = new URLSearchParams(url.search).get('filename');
-          link.download = filename || `oops-hub-image-${Date.now()}.png`;
-        } catch (e) {
-          link.download = `oops-hub-image-${Date.now()}.png`;
-        }
-
-        // 触发下载
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
-    }
   </script>
 </body>
 </html>

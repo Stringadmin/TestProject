@@ -1,10 +1,81 @@
 const comfyUIService = require('../services/index');
+const queueService = require('../services/queueService');
 
 exports.generateWithComfyUI = async (req, res) => {
     try {
         const { prompt, designImage, workflow, workflowPath } = req.body;
         const result = await comfyUIService.processComfyUIRequest(prompt, designImage, workflow, workflowPath);
         res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 提交任务到队列
+exports.submitToQueue = async (req, res) => {
+    try {
+        const { prompt, designImage, workflow, workflowPath } = req.body;
+        
+        // 验证必要参数
+        if (!prompt) {
+            return res.status(400).json({ success: false, message: '提示词不能为空' });
+        }
+        
+        // 添加到任务队列
+        const { jobId, position } = queueService.addTask({
+            prompt,
+            designImage,
+            workflow,
+            workflowPath
+        });
+        
+        res.status(200).json({
+            success: true,
+            data: {
+                jobId,
+                position,
+                status: 'pending',
+                message: '任务已添加到队列'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 获取任务状态
+exports.getJobStatus = async (req, res) => {
+    try {
+        const { jobId } = req.query;
+        
+        if (!jobId) {
+            return res.status(400).json({ success: false, message: '缺少jobId参数' });
+        }
+        
+        // 获取任务状态
+        const jobStatus = queueService.getJobStatus(jobId);
+        
+        if (!jobStatus) {
+            return res.status(404).json({ success: false, message: '任务不存在或已过期' });
+        }
+        
+        res.status(200).json({
+            success: true,
+            data: jobStatus
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 获取队列统计信息
+exports.getQueueStats = async (req, res) => {
+    try {
+        const stats = queueService.getStats();
+        res.status(200).json({
+            success: true,
+            data: stats
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

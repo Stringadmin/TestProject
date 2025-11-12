@@ -40,4 +40,9 @@ router.get('/comfyui/workflow/validate', comfyUIController.validateWorkflow);
 router.post('/comfyui/submit', comfyUIController.submitPrompt);
 router.get('/comfyui/result', comfyUIController.fetchResultOnce);
 
+// 任务队列相关路由
+router.post('/queue/submit', upload.single('file'), comfyUIController.submitToQueue);
+router.get('/queue/status', comfyUIController.getJobStatus);
+router.get('/queue/stats', comfyUIController.getQueueStats);
+
 module.exports = router;

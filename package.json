@@ -17,7 +17,8 @@
     "express": "^4.21.2",
     "form-data": "^4.0.0",
     "multer": "^2.0.2",
-    "serverless-http": "^4.0.0"
+    "serverless-http": "^4.0.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "jest": "^30.2.0",
