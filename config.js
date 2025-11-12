@@ -9,19 +9,6 @@ module.exports = {
     env: process.env.NODE_ENV || 'development'
   },
   
-  // 翻译服务配置
-  translation: {
-    // 这里可以配置不同的翻译服务
-    provider: 'youdao',
-    endpoint: 'https://openapi.youdao.com/api'
-  },
-  
-  // 网易有道翻译API配置
-  youdao: {
-    appKey: '4eac2ce956de7729',
-    appSecret: 'mBfD80PCSZNYgP45c6qrwUwqDWbsiycF'
-  },
-  
   database: {
     host: 'localhost',
     port: 27017,

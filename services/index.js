@@ -3,12 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const FormData = require('form-data');
 const config = require('../config');
-const { translate } = require('./translationService');
-
-// 检测文本是否包含中文字符
-function containsChinese(text) {
-  return /[\u4e00-\u9fa5]/.test(text);
-}
 
 // 连接状态缓存 (5秒有效期)
 const connectionCache = {
@@ -262,18 +256,7 @@ exports.processComfyUIRequest = async (prompt, designImage, workflowName, workfl
             try {
                 let processedPrompt = prompt.trim();
                 
-                // 检测是否包含中文，如果是则翻译成英文
-                if (containsChinese(processedPrompt)) {
-                    console.log('[ComfyUI Request] 检测到中文提示词，开始翻译为英文...');
-                    try {
-                        const translatedText = await translate(processedPrompt, 'zh', 'en');
-                        console.log(`[ComfyUI Request] 翻译结果: ${translatedText}`);
-                        processedPrompt = translatedText;
-                    } catch (translationError) {
-                        console.error('[ComfyUI Request] 翻译失败，使用原文:', translationError.message);
-                        // 翻译失败时使用原文
-                    }
-                }
+                // 直接使用原始提示词，不再进行翻译
                 
                 for (const nodeId of Object.keys(workflow)) {
                     const node = workflow[nodeId];

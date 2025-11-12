@@ -252,21 +252,8 @@
         let currentJobId = null;
 
         try {
-            // Step 1: Translate prompt if it contains Chinese characters
-            const containsChinese = /[\u4e00-\u9fa5]/.test(prompt);
+            // 直接使用原始提示词，不再进行翻译
             let translatedPrompt = prompt;
-
-            if (containsChinese) {
-                genBtn.innerHTML = '<span><i class="fa-solid fa-language mr-2"></i>正在翻译...</span>';
-                const translateResponse = await fetch('/api/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: prompt })
-                });
-                if (!translateResponse.ok) throw new Error('翻译失败');
-                const translationResult = await translateResponse.json();
-                translatedPrompt = translationResult.data.translatedText;
-            }
 
             // Step 2: Submit job to the queue
             genBtn.innerHTML = '<span><i class="fa-solid fa-paper-plane mr-2"></i>正在提交...</span>';
