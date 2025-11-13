@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OopsHub - 文本生图</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1E40AF',
+            secondary: '#166534',
+            accent: '#7C3AED',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .gradient-primary {
+        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+      }
+      .gradient-hover {
+        background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+      .input-focus {
+        @apply focus:ring-2 focus:ring-primary/30 focus:border-primary focus:outline-none;
+      }
+      .card-effect {
+        @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 text-gray-800 min-h-screen font-inter">
+  <!-- 导航栏 -->
+  <nav class="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-50 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <a href="index.html" class="flex items-center space-x-2 group">
+          <i class="fa-solid fa-building text-primary text-2xl group-hover:scale-105 transition-transform"></i>
+          <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">OopsHub</span>
+        </a>
+        <div class="flex items-center space-x-1 md:space-x-4 text-sm font-medium">
+          <a href="#" class="px-3 py-2 rounded-md text-primary bg-primary/10 border-b-2 border-primary transition-all">
+            <i class="fa-solid fa-pen-to-square mr-1.5"></i>文本生图
+          </a>
+          <a href="test.html" class="px-3 py-2 rounded-md text-gray-600 hover:text-primary hover:bg-primary/5 transition-all">
+            <i class="fa-solid fa-sliders mr-1.5"></i>更多功能
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <section class="py-12 md:py-20">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- 标题区域 -->
+      <div class="text-center mb-10 md:mb-12">
+        <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-gray-900 mb-3 text-shadow">文本生图</h1>
+        <p class="text-gray-600 max-w-xl mx-auto text-[clamp(1rem,2vw,1.125rem)]">
+          输入建筑描述，AI将为您生成高清设计效果图，支持多种风格与场景
+        </p>
+      </div>
+
+      <!-- 输入卡片 -->
+      <div class="card-effect p-6 md:p-8 space-y-6">
+        <!-- 提示词输入 -->
+        <div>
+          <label for="prompt" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+            <i class="fa-solid fa-lightbulb text-primary mr-2"></i>设计描述
+            <span class="text-gray-500 text-xs ml-2">(越详细，效果越精准)</span>
+          </label>
+          <textarea 
+            id="prompt" 
+            rows="4" 
+            class="w-full px-4 py-3.5 border border-gray-200 rounded-xl shadow-sm input-focus transition-all resize-none"
+            placeholder="例如：现代极简风格别墅，白色混凝土外墙，大面积落地玻璃，带无边际泳池，周围有绿植环绕，蓝天白云背景，黄昏光线"
+          ></textarea>
+        </div>
+
+        <!-- 提示词示例 -->
+        <div class="pt-2">
+          <p class="text-xs text-gray-500 mb-2">推荐示例：</p>
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 cursor-pointer transition-colors example-prompt">
+              新中式庭院，青瓦白墙，假山流水
+            </span>
+            <span class="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 cursor-pointer transition-colors example-prompt">
+              工业风办公楼，裸露钢结构，玻璃幕墙
+            </span>
+            <span class="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 cursor-pointer transition-colors example-prompt">
+              北欧风小屋，尖顶，木质外墙，雪景
+            </span>
+          </div>
+        </div>
+
+        <!-- 生成按钮 -->
+        <button 
+          id="gen" 
+          class="w-full gradient-primary text-white py-3.5 rounded-xl font-medium shadow-md hover:shadow-lg hover:gradient-hover transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center space-x-2 group"
+        >
+          <span>立即生成设计图</span>
+          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+        </button>
+        <!-- 测试按钮 -->
+        <button id="testBtn" class="mt-3 w-full bg-green-600 text-white py-3.5 rounded-xl font-medium shadow-md hover:shadow-lg hover:bg-green-700 transform hover:-translate-y-0.5 transition-all duration-300">
+          测试生成请求
+        </button>
+
+        <!-- 工作流信息和连接状态 -->
+        <div class="text-xs text-gray-500 flex items-center justify-center pt-1 gap-6">
+          <div class="flex items-center">
+            <i class="fa-solid fa-cogs mr-1.5"></i>
+            当前使用工作流：<span class="text-primary font-medium ml-1">test.json</span>
+          </div>
+          <div class="flex items-center" id="comfyui-status">
+            <i class="fa-solid fa-server mr-1.5"></i>
+            <span>ComfyUI 连接状态: <span class="font-medium" id="status-text">检查中...</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 生成结果区域 -->
+      <div id="box" class="mt-8 opacity-0 scale-95 transition-all duration-500">
+        <div class="card-effect p-1 md:p-2 overflow-hidden">
+          <div class="relative">
+            <!-- 加载状态占位符 -->
+            <div id="loading-placeholder" class="hidden absolute inset-0 bg-gray-100 rounded-xl flex items-center justify-center">
+              <div class="flex flex-col items-center">
+                <div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-3"></div>
+                <p class="text-gray-500 text-sm">正在生成设计图...</p>
+              </div>
+            </div>
+            
+            <!-- 生成的图片 -->
+            <img 
+              id="res" 
+              class="rounded-xl w-full h-auto shadow-inner" 
+              alt="生成结果"
+              loading="lazy"
+            >
+          </div>
+          
+          <!-- 图片操作按钮 -->
+          <div class="flex justify-center gap-3 mt-4 pb-2">
+            <button id="save-btn" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+              <i class="fa-solid fa-download mr-1.5"></i>保存
+            </button>
+            <button class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+              <i class="fa-solid fa-refresh mr-1.5"></i>重新生成
+            </button>
+            <button class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+              <i class="fa-solid fa-share-alt mr-1.5"></i>分享
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="mt-16 py-6 border-t border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+      <p>© 2025 OopsHub 智能建筑可视化工具</p>
+    </div>
+  </footer>
+
+  <script>
+    // Helper to generate a unique client ID
+    function getClientId() {
+        if (!localStorage.getItem('clientId')) {
+            localStorage.setItem('clientId', 'client-' + Math.random().toString(36).substring(2, 15));
+        }
+        return localStorage.getItem('clientId');
+    }
+
+    // Element selectors
+    const genBtn = document.getElementById('gen');
+    const promptInput = document.getElementById('prompt');
+    const resultBox = document.getElementById('box');
+    const resultImg = document.getElementById('res');
+    const loadingPlaceholder = document.getElementById('loading-placeholder');
+    const loadingText = loadingPlaceholder.querySelector('p');
+    const examplePrompts = document.querySelectorAll('.example-prompt');
+    const statusText = document.getElementById('status-text');
+    const saveBtn = document.getElementById('save-btn');
+    const testBtn = document.getElementById('testBtn');
+
+    const originalBtnContent = '<span>立即生成设计图</span><i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>';
+    let pollingInterval = null;
+
+    // Function to reset UI to initial state
+    function cleanupAndReset() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        genBtn.disabled = false;
+        genBtn.innerHTML = originalBtnContent;
+        loadingPlaceholder.classList.add('hidden');
+    }
+
+    // Check ComfyUI connection status
+    async function checkComfyUIConnection() {
+      try {
+        const response = await fetch('/comfyui/status');
+        if (!response.ok) throw new Error('Network response was not ok.');
+        const data = await response.json();
+        if (data.connected) {
+          statusText.textContent = '已连接';
+          statusText.className = 'font-medium text-green-600';
+        } else {
+          statusText.textContent = '未连接';
+          statusText.className = 'font-medium text-red-600';
+        }
+      } catch (error) {
+        console.error('Failed to check ComfyUI connection:', error);
+        statusText.textContent = '状态未知';
+        statusText.className = 'font-medium text-yellow-600';
+      }
+    }
+
+    // Main Generate button click handler
+    genBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+            promptInput.classList.add('border-red-300', 'animate-shake');
+            setTimeout(() => promptInput.classList.remove('border-red-300', 'animate-shake'), 1000);
+            return;
+        }
+
+        genBtn.disabled = true;
+        let currentJobId = null;
+
+        try {
+            // 直接使用原始提示词，不再进行翻译
+            let translatedPrompt = prompt;
+
+            // Step 2: Submit job to the queue
+            genBtn.innerHTML = '<span><i class="fa-solid fa-paper-plane mr-2"></i>正在提交...</span>';
+            const submitResponse = await fetch('/queue/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: translatedPrompt, workflow: 'test' })
+            });
+
+            if (!submitResponse.ok) throw new Error('提交任务失败');
+            const submitResult = await submitResponse.json();
+            currentJobId = submitResult.data.jobId;
+
+            // Show loading state
+            resultBox.classList.remove('opacity-0', 'scale-95');
+            loadingPlaceholder.classList.remove('hidden');
+            loadingText.textContent = '已提交，等待处理...';
+            resultImg.classList.add('hidden');
+            resultImg.src = '';
+
+            // Step 3: Poll for job status
+            pollingInterval = setInterval(async () => {
+                if (!currentJobId) return;
+
+                try {
+                    const statusResponse = await fetch(`/queue/status?jobId=${currentJobId}`);
+                    if (!statusResponse.ok) {
+                        if (statusResponse.status === 404) {
+                            clearInterval(pollingInterval);
+                            alert('任务不存在或已过期');
+                            cleanupAndReset();
+                        }
+                        return;
+                    }
+
+                    const statusResult = await statusResponse.json();
+                    const job = statusResult.data;
+
+                    switch (job.status) {
+                        case 'pending':
+                            genBtn.innerHTML = `<span><i class="fa-solid fa-clock-rotate-left mr-2"></i>排队中 #${job.position}</span>`;
+                            loadingText.textContent = `排队中，您前面还有 ${job.position - 1} 个任务...`;
+                            break;
+                        case 'processing':
+                            genBtn.innerHTML = '<span><div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 处理中...</span>';
+                            loadingText.textContent = '正在生成设计图，请稍候...';
+                            break;
+                        case 'completed':
+                            clearInterval(pollingInterval);
+                            genBtn.innerHTML = '<span><i class="fa-solid fa-check mr-2"></i>已完成</span>';
+                            
+                            if (job.result && job.result.generatedImages && job.result.generatedImages.length > 0) {
+                                const imageUrl = job.result.generatedImages[0];
+                                resultImg.onload = () => {
+                                    loadingPlaceholder.classList.add('hidden');
+                                    resultImg.classList.remove('hidden');
+                                };
+                                resultImg.onerror = () => {
+                                    alert('图片加载失败，请检查链接或网络。');
+                                    cleanupAndReset();
+                                };
+                                resultImg.src = imageUrl;
+                            } else {
+                                alert('未生成任何图片');
+                                cleanupAndReset();
+                            }
+                            
+                            setTimeout(cleanupAndReset, 3000);
+                            break;
+                        case 'failed':
+                            clearInterval(pollingInterval);
+                            alert(`任务失败: ${job.error}`);
+                            cleanupAndReset();
+                            break;
+                    }
+                } catch (pollError) {
+                    console.error('轮询错误:', pollError);
+                }
+            }, 2500);
+
+        } catch (error) {
+            alert(`发生错误: ${error.message}`);
+            cleanupAndReset();
+        }
+    });
+
+    // Save button functionality
+    saveBtn.addEventListener('click', () => {
+        const imageUrl = resultImg.src;
+        if (!imageUrl || resultImg.naturalWidth === 0) {
+            alert('没有可供保存的图片。');
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `oops-hub-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    
+    // Example prompts functionality
+    examplePrompts.forEach(example => {
+        example.addEventListener('click', () => {
+            promptInput.value = example.textContent.trim();
+            promptInput.focus();
+        });
+    });
+
+    // Initial connection check and periodic checks
+    checkComfyUIConnection();
+    setInterval(checkComfyUIConnection, 30000);
+
+    // Hide the test button as it's no longer needed for the main flow
+    if(testBtn) {
+      testBtn.style.display = 'none';
+    }
+    
+    // Add shake animation style
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+        20%, 40%, 60%, 80% { transform: translateX(3px); }
+      }
+      .animate-shake { animation: shake 0.5s ease-in-out; }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

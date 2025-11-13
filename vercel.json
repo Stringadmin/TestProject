@@ -1,0 +1,98 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "handler.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "uploads/(.*)",
+      "use": "@vercel/static"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/comfy/:path*",
+      "destination": "http://117.50.83.222:8188/:path*"
+    },
+    {
+      "source": "/comfyui/status",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/submit",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/result",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/image-proxy",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/queue/submit",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/queue/status",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/queue/stats",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "/uploads/:path*"
+    },
+    {
+      "source": "/:path.(html|js|css|png|jpg|jpeg|gif|ico|json)",
+      "destination": "/:path.$1"
+    },
+    {
+      "source": "/",
+      "destination": "/handler.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  
+  },
+  "headers": [
+    {
+      "source": "/comfy/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ]
+}
