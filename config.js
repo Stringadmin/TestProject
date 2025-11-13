@@ -23,7 +23,7 @@ module.exports = {
       process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || '/comfy' : 
       process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || 'http://117.50.83.222:8188',
     timeout: 30000, // 请求超时时间（毫秒）
-    workflowDir: path.join(__dirname, 'comfyui_workflows'),
+    workflowDir: 'comfyui_workflows', // 相对路径，将在services中解析为绝对路径
     retryConfig: {
       maxRetries: 3,
       retryDelay: 2000 // 重试延迟（毫秒）

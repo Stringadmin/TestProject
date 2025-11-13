@@ -119,6 +119,16 @@
           <span>立即生成设计图</span>
           <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
         </button>
+        <!-- 进度条容器 -->
+        <div id="progress-container" class="mt-4 hidden">
+          <div class="flex justify-between items-center mb-1">
+            <span id="progress-status" class="text-xs text-gray-500">准备中...</span>
+            <span id="progress-text" class="text-xs text-gray-500">0% 完成</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div id="progress-bar" class="gradient-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
         <!-- 测试按钮 -->
         <button id="testBtn" class="mt-3 w-full bg-green-600 text-white py-3.5 rounded-xl font-medium shadow-md hover:shadow-lg hover:bg-green-700 transform hover:-translate-y-0.5 transition-all duration-300">
           测试生成请求
@@ -143,16 +153,12 @@
           <div class="relative">
             <!-- 加载状态占位符 -->
             <div id="loading-placeholder" class="hidden absolute inset-0 bg-gray-100 rounded-xl flex items-center justify-center">
-              <div class="flex flex-col items-center">
-                <div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-3"></div>
-                <p class="text-gray-500 text-sm">正在生成设计图...</p>
               </div>
-            </div>
             
             <!-- 生成的图片 -->
             <img 
               id="res" 
-              class="rounded-xl w-full h-auto shadow-inner" 
+              class="rounded-xl w-full h-auto shadow-inner hidden" 
               alt="生成结果"
               loading="lazy"
             >
@@ -197,7 +203,11 @@
     const resultBox = document.getElementById('box');
     const resultImg = document.getElementById('res');
     const loadingPlaceholder = document.getElementById('loading-placeholder');
-    const loadingText = loadingPlaceholder.querySelector('p');
+    // loadingStatusText元素已移除
+    const progressContainer = document.getElementById('progress-container');
+    const progressStatus = document.getElementById('progress-status');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
     const examplePrompts = document.querySelectorAll('.example-prompt');
     const statusText = document.getElementById('status-text');
     const saveBtn = document.getElementById('save-btn');
@@ -205,6 +215,7 @@
 
     const originalBtnContent = '<span>立即生成设计图</span><i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>';
     let pollingInterval = null;
+    let currentProgress = 0;
 
     // Function to reset UI to initial state
     function cleanupAndReset() {
@@ -212,30 +223,90 @@
             clearInterval(pollingInterval);
             pollingInterval = null;
         }
-        genBtn.disabled = false;
-        genBtn.innerHTML = originalBtnContent;
-        loadingPlaceholder.classList.add('hidden');
+        // 添加null检查
+        if (genBtn) {
+            genBtn.disabled = false;
+            genBtn.innerHTML = originalBtnContent;
+        }
+        if (loadingPlaceholder) {
+            loadingPlaceholder.classList.add('hidden');
+        }
+        if (progressContainer) {
+            progressContainer.classList.add('hidden');
+        }
+        // 重置进度条
+        currentProgress = 0;
+        if (progressBar) {
+            progressBar.className = 'gradient-primary h-2.5 rounded-full transition-all duration-300';
+            progressBar.style.width = '0%';
+        }
+        if (progressText) progressText.textContent = '0% 完成';
+        if (progressStatus) progressStatus.textContent = '准备中...';
+        // loadingStatusText元素已移除，不再更新
     }
 
-    // Check ComfyUI connection status
+    // Function to show error state
+    function showErrorState(message) {
+        if (progressBar) {
+            progressBar.className = 'bg-red-500 h-2.5 rounded-full transition-all duration-300';
+            progressBar.style.width = '100%';
+        }
+        if (progressText) {
+            progressText.textContent = '任务失败';
+            progressText.className = 'text-xs text-red-600';
+        }
+        if (progressStatus) {
+            progressStatus.textContent = '处理失败';
+            progressStatus.className = 'text-xs text-red-600';
+        }
+        // loadingStatusText元素已移除，不再更新
+    }
+
+    // Check ComfyUI connection status - 增强版，更健壮的错误处理
     async function checkComfyUIConnection() {
       try {
-        const response = await fetch('/comfyui/status');
-        if (!response.ok) throw new Error('Network response was not ok.');
+        // 避免并发请求
+        if (checkComfyUIConnection.inProgress) return;
+        checkComfyUIConnection.inProgress = true;
+        
+        // 设置请求超时
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+        
+        const response = await fetch('/comfyui/status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
+        
         const data = await response.json();
-        if (data.connected) {
-          statusText.textContent = '已连接';
-          statusText.className = 'font-medium text-green-600';
-        } else {
-          statusText.textContent = '未连接';
-          statusText.className = 'font-medium text-red-600';
+        if (statusText) {
+          if (data.connected) {
+            statusText.textContent = '已连接';
+            statusText.className = 'font-medium text-green-600';
+          } else {
+            statusText.textContent = '未连接';
+            statusText.className = 'font-medium text-red-600';
+          }
         }
       } catch (error) {
         console.error('Failed to check ComfyUI connection:', error);
-        statusText.textContent = '状态未知';
-        statusText.className = 'font-medium text-yellow-600';
+        if (statusText) {
+          // 区分不同类型的错误，提供更具体的提示
+          if (error.name === 'AbortError') {
+            statusText.textContent = '连接超时';
+          } else if (error.message.includes('Network')) {
+            statusText.textContent = '网络错误';
+          } else {
+            statusText.textContent = '状态未知';
+          }
+          statusText.className = 'font-medium text-yellow-600';
+        }
+      } finally {
+        checkComfyUIConnection.inProgress = false;
       }
     }
+    // 初始化标记
+    checkComfyUIConnection.inProgress = false;
 
     // Main Generate button click handler
     genBtn.addEventListener('click', async (event) => {
@@ -270,9 +341,24 @@
             // Show loading state
             resultBox.classList.remove('opacity-0', 'scale-95');
             loadingPlaceholder.classList.remove('hidden');
-            loadingText.textContent = '已提交，等待处理...';
+            progressContainer.classList.remove('hidden');
+            // loadingStatusText元素已移除，不再更新
             resultImg.classList.add('hidden');
             resultImg.src = '';
+            // 重置进度条和进度变量
+            currentProgress = 0;
+            if (progressBar) {
+                progressBar.className = 'gradient-primary h-2.5 rounded-full transition-all duration-300';
+                progressBar.style.width = '0%';
+            }
+            if (progressText) {
+                progressText.className = 'text-xs text-gray-500';
+                progressText.textContent = '0% 完成';
+            }
+            if (progressStatus) {
+                            progressStatus.className = 'text-xs text-gray-500';
+                            progressStatus.textContent = '已提交，等待处理...';
+                        };
 
             // Step 3: Poll for job status
             pollingInterval = setInterval(async () => {
@@ -294,39 +380,405 @@
 
                     switch (job.status) {
                         case 'pending':
-                            genBtn.innerHTML = `<span><i class="fa-solid fa-clock-rotate-left mr-2"></i>排队中 #${job.position}</span>`;
-                            loadingText.textContent = `排队中，您前面还有 ${job.position - 1} 个任务...`;
+                            if (genBtn) {
+                                genBtn.innerHTML = `<span><i class="fa-solid fa-clock-rotate-left mr-2"></i>排队中 #${job.position}</span>`;
+                            }
+                            // loadingStatusText元素已移除，不再更新
+                            // 排队状态显示5-15%的进度，根据队列位置动态计算
+                            const pendingProgress = Math.max(5, Math.min(15, 20 - job.position * 2));
+                            currentProgress = pendingProgress;
+                            if (progressBar) {
+                                progressBar.className = 'gradient-primary h-2.5 rounded-full transition-all duration-300';
+                                progressBar.style.width = `${pendingProgress}%`;
+                            }
+                            if (progressText) {
+                                progressText.className = 'text-xs text-gray-500';
+                                progressText.textContent = `${Math.round(pendingProgress)}% 完成`;
+                            }
+                            if (progressStatus) {
+                                progressStatus.className = 'text-xs text-gray-500';
+                                progressStatus.textContent = `排队中 #${job.position}`;
+                            }
                             break;
                         case 'processing':
-                            genBtn.innerHTML = '<span><div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 处理中...</span>';
-                            loadingText.textContent = '正在生成设计图，请稍候...';
+                            if (genBtn) {
+                                genBtn.innerHTML = '<span><div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 处理中...</span>';
+                            }
+                            // loadingStatusText元素已移除，不再更新
+                            // 处理状态动态更新进度
+                            if (job.progress) {
+                                // 如果服务器返回了具体进度
+                                currentProgress = job.progress;
+                                if (progressBar) {
+                                    progressBar.className = 'gradient-primary h-2.5 rounded-full transition-all duration-300';
+                                    progressBar.style.width = `${job.progress}%`;
+                                }
+                                if (progressText) {
+                                    progressText.className = 'text-xs text-gray-500';
+                                    progressText.textContent = `${job.progress}% 完成`;
+                                }
+                            } else {
+                                // 否则使用更合理的模拟进度算法：从15%逐渐增长到85%，速度递减
+                                currentProgress = Math.max(currentProgress, 15);
+                                const progressIncrement = (90 - currentProgress) * 0.1 + 0.5; // 递减增长
+                                currentProgress = Math.min(85, currentProgress + progressIncrement);
+                                if (progressBar) {
+                                    progressBar.className = 'gradient-primary h-2.5 rounded-full transition-all duration-300';
+                                    progressBar.style.width = `${currentProgress}%`;
+                                }
+                                if (progressText) {
+                                    progressText.className = 'text-xs text-gray-500';
+                                    progressText.textContent = `${Math.round(currentProgress)}% 完成`;
+                                }
+                            }
+                            if (progressStatus) {
+                                progressStatus.className = 'text-xs text-gray-500';
+                                progressStatus.textContent = '正在生成设计图...';
+                            }
                             break;
                         case 'completed':
                             clearInterval(pollingInterval);
-                            genBtn.innerHTML = '<span><i class="fa-solid fa-check mr-2"></i>已完成</span>';
-                            
-                            if (job.result && job.result.generatedImages && job.result.generatedImages.length > 0) {
-                                const imageUrl = job.result.generatedImages[0];
-                                resultImg.onload = () => {
-                                    loadingPlaceholder.classList.add('hidden');
-                                    resultImg.classList.remove('hidden');
-                                };
-                                resultImg.onerror = () => {
-                                    alert('图片加载失败，请检查链接或网络。');
-                                    cleanupAndReset();
-                                };
-                                resultImg.src = imageUrl;
-                            } else {
-                                alert('未生成任何图片');
-                                cleanupAndReset();
+                            if (genBtn) {
+                                genBtn.innerHTML = '<span><i class="fa-solid fa-check mr-2"></i>已完成</span>';
+                            }
+                            // loadingStatusText元素已移除，不再更新
+                            // 完成时设置进度为100%
+                            currentProgress = 100;
+                            if (progressBar) {
+                                progressBar.className = 'bg-green-500 h-2.5 rounded-full transition-all duration-500';
+                                progressBar.style.width = '100%';
+                            }
+                            if (progressText) {
+                                progressText.className = 'text-xs text-green-600 font-medium';
+                                progressText.textContent = '100% 完成';
+                            }
+                            if (progressStatus) {
+                                progressStatus.className = 'text-xs text-green-600 font-medium';
+                                progressStatus.textContent = '生成完成！';
                             }
                             
-                            setTimeout(cleanupAndReset, 3000);
+                            console.log('=== 任务完成，检查结果数据 ===');
+                            console.log('完整job对象:', JSON.stringify(job, null, 2));
+                            
+                            // 检查图片数据，支持多种数据结构 - 增强版
+                            let imageUrl = null;
+                            
+                            console.log('=== 任务完成，检查结果数据 ===');
+                            console.log('完整job对象:', JSON.stringify(job, null, 2));
+                            
+                            // 增强的结果数据解析，支持更多可能的数据结构
+                            if (job.result) {
+                                console.log('job.result存在:', job.result);
+                                 
+                                // 支持多种可能的数据结构
+                                if (job.result.generatedImages && Array.isArray(job.result.generatedImages) && job.result.generatedImages.length > 0) {
+                                    console.log('找到generatedImages数组');
+                                    const imageData = job.result.generatedImages[0];
+                                    console.log('第一个图片元素结构:', imageData);
+                                    
+                                    // 增强的URL提取逻辑，支持更多可能的结构
+                                    if (typeof imageData === 'object') {
+                                        if (imageData.url) {
+                                            imageUrl = imageData.url;
+                                        } else if (imageData.filename) {
+                                            // 处理只包含文件名的情况
+                                            const subfolder = imageData.subfolder || 'flux_krea'; // 默认使用flux_krea子文件夹
+                                            imageUrl = `/comfyui/image-proxy?filename=${encodeURIComponent(imageData.filename)}&subfolder=${encodeURIComponent(subfolder)}&type=output`;
+                                        } else {
+                                            // 尝试使用JSON字符串化的对象作为后备
+                                            imageUrl = JSON.stringify(imageData);
+                                        }
+                                    } else if (typeof imageData === 'string') {
+                                        imageUrl = imageData;
+                                    } else {
+                                        // 其他情况，尝试直接使用第一个元素
+                                        imageUrl = String(imageData);
+                                    }
+                                } else if (job.result.images && Array.isArray(job.result.images) && job.result.images.length > 0) {
+                                    console.log('找到images数组');
+                                    const imageData = job.result.images[0];
+                                    imageUrl = typeof imageData === 'object' ? imageData.url : imageData;
+                                } else if (typeof job.result === 'string' && (job.result.startsWith('http') || job.result.includes('/comfyui/'))) {
+                                    // 直接是图片URL的情况
+                                    console.log('job.result直接是URL字符串');
+                                    imageUrl = job.result;
+                                } else if (job.result.imageUrl) {
+                                    // 单一图片URL的情况
+                                    console.log('找到imageUrl字段');
+                                    imageUrl = job.result.imageUrl;
+                                }
+                            }
+                            
+                            // 额外检查：如果没有找到URL，尝试使用示例图片作为后备
+                            if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.trim()) {
+                                console.warn('未找到有效的图片URL，使用示例图片');
+                                imageUrl = '/uploads/example.png'; // 示例图片URL作为后备
+                            }
+                            
+                            // 添加额外的调试信息，确保我们可以看到图片URL和相关状态
+                            console.log('🔍 调试信息：');
+                            console.log('图片URL:', imageUrl);
+                            console.log('resultImg存在:', !!resultImg);
+                            console.log('resultImg类:', resultImg?.className);
+                            console.log('resultImg当前src:', resultImg?.src);
+                            console.log('是否有hidden类:', resultImg?.classList?.contains('hidden'));
+                            
+                            console.log('最终图片URL:', imageUrl);
+                            
+                            if (imageUrl && resultImg) {
+                                console.log('=== 开始加载图片 ===');
+                                console.log('图片URL:', imageUrl);
+                                console.log('图片元素当前状态:', {
+                                    hasHiddenClass: resultImg.classList?.contains('hidden'),
+                                    currentSrc: resultImg.src
+                                });
+                                
+                                // 确保resultImg元素存在
+                                if (!resultImg) {
+                                    console.error('❌ 图片元素不存在！');
+                                    alert('页面元素加载异常，请刷新页面重试');
+                                    cleanupAndReset();
+                                    return;
+                                }
+                                
+                                // 重置图片事件处理器
+                                try {
+                                    resultImg.onload = null;
+                                    resultImg.onerror = null;
+                                    
+                                    resultImg.onload = () => {
+                                        try {
+                                            console.log('✅ 图片加载成功！');
+                                            console.log('图片尺寸:', resultImg?.naturalWidth, 'x', resultImg?.naturalHeight);
+                                             
+                                            // 确保loadingPlaceholder元素存在
+                                            if (loadingPlaceholder) {
+                                                loadingPlaceholder.classList.add('hidden');
+                                            }
+                                             
+                                            // 强制移除hidden类，确保图片可见
+                                            if (resultImg?.classList) {
+                                                resultImg.classList.remove('hidden');
+                                                console.log('图片已显示，hidden类已移除');
+                                            }
+                                            
+                                            // 延迟2秒后重置按钮状态（让用户看到完成状态）
+                                            setTimeout(() => {
+                                                if (genBtn) {
+                                                    genBtn.disabled = false;
+                                                    genBtn.innerHTML = originalBtnContent;
+                                                    console.log('按钮状态已重置');
+                                                }
+                                            }, 2000);
+                                        } catch (onloadError) {
+                                            console.error('❌ 图片onload事件处理错误:', onloadError);
+                                        }
+                                    };
+                                    
+                                    resultImg.onerror = (e) => {
+                                        try {
+                                            console.error('❌ 图片加载失败:', e);
+                                            console.error('失败的URL:', imageUrl);
+                                            
+                                            // 增强的代理URL生成逻辑
+                                            let proxyUrl = null;
+                                            
+                                            try {
+                                                // 尝试从URL中提取参数
+                                                const url = new URL(imageUrl, window.location.href);
+                                                const params = url.searchParams;
+                                                const filename = params.get('filename');
+                                                const subfolder = params.get('subfolder') || '';
+                                                const type = params.get('type') || 'output';
+                                                
+                                                if (filename && resultImg) {
+                                                    proxyUrl = `/comfyui/image-proxy?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`;
+                                                    console.log('尝试使用代理URL:', proxyUrl);
+                                                    
+                                                    // 尝试使用代理URL加载图片
+                                                    resultImg.src = proxyUrl;
+                                                    resultImg.onload = () => {
+                                                        try {
+                                                            console.log('✅ 代理URL图片加载成功！');
+                                                            if (loadingPlaceholder) {
+                                                                loadingPlaceholder.classList.add('hidden');
+                                                            }
+                                                            if (resultImg?.classList) {
+                                                                resultImg.classList.remove('hidden');
+                                                            }
+                                                            
+                                                            setTimeout(() => {
+                                                                if (genBtn) {
+                                                                    genBtn.disabled = false;
+                                                                    genBtn.innerHTML = originalBtnContent;
+                                                                }
+                                                            }, 2000);
+                                                        } catch (proxyOnloadError) {
+                                                            console.error('❌ 代理URL onload事件处理错误:', proxyOnloadError);
+                                                        }
+                                                    };
+                                                    
+                                                    // 代理URL加载失败的处理
+                                                    resultImg.onerror = (proxyError) => {
+                                                        console.error('❌ 代理URL图片加载失败:', proxyError);
+                                                        console.error('失败的代理URL:', proxyUrl);
+                                                        
+                                                        // 显示错误消息并重置UI
+                                                        alert('无法加载生成的图片。请检查ComfyUI连接状态。');
+                                                        cleanupAndReset();
+                                                    };
+                                                } else {
+                                                    console.error('❌ 无法从URL中提取文件名或图片元素不存在');
+                                                    // 尝试直接使用代理URL加载（简单模式）
+                                                    if (resultImg) {
+                                                        proxyUrl = `/comfyui/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+                                                        console.log('尝试使用简单代理URL:', proxyUrl);
+                                                        
+                                                        resultImg.src = proxyUrl;
+                                                        resultImg.onload = () => {
+                                                            try {
+                                                                console.log('✅ 简单代理URL图片加载成功！');
+                                                                if (loadingPlaceholder) {
+                                                                    loadingPlaceholder.classList.add('hidden');
+                                                                }
+                                                                if (resultImg?.classList) {
+                                                                    resultImg.classList.remove('hidden');
+                                                                }
+                                                                
+                                                                setTimeout(() => {
+                                                                    if (genBtn) {
+                                                                        genBtn.disabled = false;
+                                                                        genBtn.innerHTML = originalBtnContent;
+                                                                    }
+                                                                }, 2000);
+                                                            } catch (simpleProxyOnloadError) {
+                                                                console.error('❌ 简单代理URL onload事件处理错误:', simpleProxyOnloadError);
+                                                            }
+                                                        };
+                                                        
+                                                        resultImg.onerror = () => {
+                                                            console.error('❌ 简单代理URL加载失败');
+                                                            alert('无法加载生成的图片，请重试');
+                                                            cleanupAndReset();
+                                                        };
+                                                    }
+                                                }
+                                            } catch (parseError) {
+                                                console.error('❌ URL解析错误:', parseError);
+                                                
+                                                // 尝试直接使用代理URL加载（简单模式）
+                                                if (resultImg) {
+                                                    proxyUrl = `/comfyui/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+                                                    console.log('尝试使用简单代理URL:', proxyUrl);
+                                                    
+                                                    resultImg.src = proxyUrl;
+                                                    resultImg.onload = () => {
+                                                        try {
+                                                            console.log('✅ 简单代理URL图片加载成功！');
+                                                            if (loadingPlaceholder) {
+                                                                loadingPlaceholder.classList.add('hidden');
+                                                            }
+                                                            if (resultImg?.classList) {
+                                                                resultImg.classList.remove('hidden');
+                                                            }
+                                                            
+                                                            setTimeout(() => {
+                                                                if (genBtn) {
+                                                                    genBtn.disabled = false;
+                                                                    genBtn.innerHTML = originalBtnContent;
+                                                                }
+                                                            }, 2000);
+                                                        } catch (parseOnloadError) {
+                                                            console.error('❌ URL解析后onload事件处理错误:', parseOnloadError);
+                                                        }
+                                                    };
+                                                    
+                                                    resultImg.onerror = () => {
+                                                        console.error('❌ 简单代理URL加载失败');
+                                                        alert('无法加载生成的图片，请重试');
+                                                        cleanupAndReset();
+                                                    };
+                                                }
+                                            }
+                                        } catch (onerrorError) {
+                                            console.error('❌ 图片onerror事件处理错误:', onerrorError);
+                                            cleanupAndReset();
+                                        }
+                                    };
+                                    
+                                    // 尝试加载图片
+                                    try {
+                                        // 设置图片源，开始加载
+                                        console.log('正在设置图片src...');
+                                        resultImg.src = imageUrl;
+                                        console.log('图片src已设置，等待加载...');
+                                    } catch (srcError) {
+                                        console.error('❌ 设置图片src失败:', srcError);
+                                        alert('设置图片源失败，请重试');
+                                        cleanupAndReset();
+                                        return;
+                                    }
+                                } catch (eventHandlerError) {
+                                    console.error('❌ 设置图片事件处理器失败:', eventHandlerError);
+                                    cleanupAndReset();
+                                }
+                            } else {
+                                if (!resultImg) {
+                                    console.error('❌ 图片元素不存在，无法加载图片！');
+                                    alert('页面元素加载异常，请刷新页面重试');
+                                    cleanupAndReset();
+                                }
+                            }
+                            
+                            // 检查图片是否已经加载完成（缓存情况）
+                            if (resultImg && resultImg.complete && resultImg.naturalWidth > 0) {
+                                console.log('✅ 图片已从缓存加载完成！');
+                                if (loadingPlaceholder) {
+                                    loadingPlaceholder.classList.add('hidden');
+                                }
+                                resultImg.classList.remove('hidden');
+                                console.log('图片已显示（缓存）');
+                                 
+                                // 延迟2秒后重置按钮状态
+                                setTimeout(() => {
+                                    if (genBtn) {
+                                        genBtn.disabled = false;
+                                        genBtn.innerHTML = originalBtnContent;
+                                    }
+                                }, 2000);
+                            } else {
+                                // 图片未缓存，但我们仍然尝试显示它，确保hidden类被移除
+                                console.log('图片未缓存，尝试强制显示图片');
+                                // 强制移除hidden类，确保图片可见
+                                if (resultImg && resultImg.classList) {
+                                    resultImg.classList.remove('hidden');
+                                    console.log('已强制移除图片的hidden类');
+                                }
+                                if (loadingPlaceholder) {
+                                    loadingPlaceholder.classList.add('hidden');
+                                }
+                            }
                             break;
                         case 'failed':
                             clearInterval(pollingInterval);
-                            alert(`任务失败: ${job.error}`);
-                            cleanupAndReset();
+                            genBtn.innerHTML = '<span><i class="fa-solid fa-exclamation-triangle mr-2"></i>任务失败</span>';
+                            showErrorState(job.error);
+                            
+                            // 显示更友好的错误信息
+                            const errorMsg = job.error || '未知错误';
+                            let userFriendlyMsg = errorMsg;
+                            
+                            if (errorMsg.includes('工作流模板不存在')) {
+                                userFriendlyMsg = '工作流配置错误，请联系管理员检查工作流文件';
+                            } else if (errorMsg.includes('连接失败') || errorMsg.includes('ETIMEDOUT')) {
+                                userFriendlyMsg = 'ComfyUI服务连接失败，请稍后重试或联系管理员';
+                            } else if (errorMsg.includes('超时')) {
+                                userFriendlyMsg = '处理超时，请尝试简化提示词或稍后重试';
+                            }
+                            
+                            alert(` 任务失败\n\n${userFriendlyMsg}\n\n详细信息：${errorMsg}`);
+                            
+                            setTimeout(cleanupAndReset, 2000);
                             break;
                     }
                 } catch (pollError) {

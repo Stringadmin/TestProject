@@ -375,7 +375,8 @@ exports.waitForComfyUIResult = async (promptId, maxWaitTime = 300000) => { // 5�
                             filename: img.filename,
                             subfolder: img.subfolder,
                             type: img.type,
-                            url: `${apiUrl}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
+                            // 使用本地图片代理路由，避免跨域问题
+                            url: `/comfyui/image-proxy?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || '')}&type=${encodeURIComponent(img.type)}`
                         }));
                         
                         return {
@@ -720,15 +721,26 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
                             type: img.type
                         });
                         
-                        // 为可选字段提供默认值，确保生成的URL不会出现undefined
-                        const proxyUrl = `/comfyui/image-proxy?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || '')}&type=${encodeURIComponent(img.type || 'output')}`;
-                        console.log(`[${new Date().toISOString()}] fetchComfyUIResultOnce - 构建的代理图像URL:`, proxyUrl);
+                        // 确保subfolder和type有正确的默认值
+                        const subfolder = img.subfolder || '';
+                        const type = img.type || 'output';
+                        
+                        // 构建图片的完整URL（直接使用ComfyUI的/view端点）
+                        // 获取API URL配置
+                        let apiUrl = (config.comfyUI.apiUrl || '').trim();
+                        if (!apiUrl) apiUrl = '/comfy';
+                        apiUrl = apiUrl.replace(/\/$/, ''); // 移除末尾斜杠
+                        
+                        // 构建完整的图片URL
+                        const directImageUrl = `${apiUrl}/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`;
+                        
+                        console.log(`[${new Date().toISOString()}] fetchComfyUIResultOnce - 构建的直接图像URL:`, directImageUrl);
                         
                         images.push({
                             filename: img.filename,
-                            subfolder: img.subfolder || '',
-                            type: img.type || 'output',
-                            url: proxyUrl
+                            subfolder: subfolder,
+                            type: type,
+                            url: directImageUrl
                         });
                     }
                 }
