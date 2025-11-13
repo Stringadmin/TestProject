@@ -516,7 +516,33 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     if (isAPIPrompt && typeof prompt === 'string' && prompt.trim()) {
         try {
             const trimmedPrompt = prompt.trim();
-            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 开始智能注入提示词...`);
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 开始智能注入提示词和随机种子...`);
+            
+            // 生成随机种子确保每次生成不同
+            const randomSeed = Math.floor(Math.random() * 1000000000);
+            console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 生成新随机种子: ${randomSeed}`);
+            
+            // 查找并修改所有种子节点
+            for (const nodeId in workflow) {
+                const node = workflow[nodeId];
+                // 查找各种类型的种子节点
+                if (node && node.inputs && (node.class_type.includes('Seed') || 
+                    (node.inputs.seed !== undefined) || 
+                    (node.inputs.random_seed !== undefined) ||
+                    /seed/i.test(nodeId))) {
+                    
+                    // 设置种子值
+                    if (node.inputs.seed !== undefined) {
+                        node.inputs.seed = randomSeed;
+                        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 修改节点 ${nodeId} 的种子值为: ${randomSeed}`);
+                    }
+                    if (node.inputs.random_seed !== undefined) {
+                        node.inputs.random_seed = randomSeed;
+                        console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 修改节点 ${nodeId} 的随机种子值为: ${randomSeed}`);
+                    }
+                }
+            }
+            
             // 寻找采样器节点（如 KSampler）
             const samplerNodeId = Object.keys(workflow).find(id => workflow[id].class_type.includes('Sampler') && workflow[id].inputs.positive);
 
@@ -557,7 +583,17 @@ exports.submitComfyUIPrompt = async (prompt, designImage, workflowName, workflow
     }
 
     // 4. 提交任务并返回 prompt_id
-    const payload = { prompt: workflow, client_id: 'archvisualizer-web' };
+    // 添加时间戳，确保每次请求都是唯一的，避免ComfyUI返回缓存结果
+    // 使用之前定义的randomSeed变量，避免重复定义
+    const timestamp = Date.now();
+    const payload = {
+        prompt: workflow,
+        client_id: 'archvisualizer-web',
+        timestamp: timestamp,
+        random_seed: randomSeed,
+        force_new_generation: true // 显式要求重新生成
+    };
+    console.log(`[${new Date().toISOString()}] submitComfyUIPrompt - 添加唯一标识：时间戳=${timestamp}, 随机数=${randomSeed}`);
     // 使用更安全的URL拼接方法 - 使用处理过的currentApiUrl而不是初始化时的COMFYUI_CONFIG.API_URL
     const apiUrl = currentApiUrl.replace(/\/$/, ''); // 确保没有尾部斜杠
     const fullUrl = `${apiUrl}/${COMFYUI_CONFIG.PROMPT_ENDPOINT}`;
@@ -619,17 +655,36 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
         
         console.log(`[${new Date().toISOString()}] 历史记录URL: ${historyUrl}`);
         
-        logger.logRequest('GET', historyUrl, null, {});
-        const response = await axios.get(
-            historyUrl,
-            {
-                timeout: 8000,
-                validateStatus: function (status) {
-                    // 接受任何状态码，以便处理各种情况
-                    return status >= 200 && status < 600;
-                }
+        // 创建axios实例进行重试
+        const axiosInstance = axios.create({
+            validateStatus: function (status) {
+                // 接受任何状态码，以便处理各种情况
+                return status >= 200 && status < 600;
             }
-        );
+        });
+        
+        // 重试逻辑
+        let response;
+        let retryCount = 0;
+        const maxRetries = 2;
+        const retryDelay = 1000;
+        
+        while (retryCount <= maxRetries) {
+            try {
+                logger.logRequest('GET', historyUrl, null, {});
+                response = await axiosInstance.get(historyUrl, {
+                    timeout: 15000, // 增加超时时间到15秒
+                });
+                break; // 成功获取响应，跳出循环
+            } catch (retryError) {
+                retryCount++;
+                if (retryCount > maxRetries) {
+                    throw retryError; // 重试次数用完，抛出错误
+                }
+                console.log(`[${new Date().toISOString()}] 请求失败，${retryCount}秒后重试...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay * retryCount)); // 指数退避
+            }
+        }
         logger.logResponse(response);
         
         console.log(`[${new Date().toISOString()}] fetchComfyUIResultOnce - 完整响应数据:`, JSON.stringify(response.data));
@@ -666,7 +721,7 @@ exports.fetchComfyUIResultOnce = async (promptId) => {
                         });
                         
                         // 为可选字段提供默认值，确保生成的URL不会出现undefined
-                        const proxyUrl = `/comfy/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || '')}&type=${encodeURIComponent(img.type || 'output')}`;
+                        const proxyUrl = `/comfyui/image-proxy?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || '')}&type=${encodeURIComponent(img.type || 'output')}`;
                         console.log(`[${new Date().toISOString()}] fetchComfyUIResultOnce - 构建的代理图像URL:`, proxyUrl);
                         
                         images.push({
@@ -787,7 +842,37 @@ exports.setupImageProxy = (app) => {
                 config: error.config ? { url: error.config.url, timeout: error.config.timeout } : null,
                 response: error.response ? { status: error.response.status } : null
             });
-            res.status(500).json({ error: '图像加载失败', details: error.message });
+            
+            // 分析错误类型，设置更准确的错误信息和状态码
+            let errorMessage = '图像加载失败';
+            let statusCode = 500;
+            
+            if (error.response) {
+                // 服务器返回了错误响应
+                statusCode = error.response.status;
+                errorMessage = `服务器返回错误: ${error.response.status} ${error.response.statusText}`;
+            } else if (error.request) {
+                // 请求已发出但没有收到响应
+                errorMessage = '无法连接到图像服务器，请检查网络连接';
+                statusCode = 502; // Bad Gateway
+            } else {
+                // 请求配置出错
+                errorMessage = `请求错误: ${error.message}`;
+            }
+            
+            // 设置CORS头部，即使在错误响应中
+            res.set('Access-Control-Allow-Origin', '*');
+            res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+            res.set('Access-Control-Allow-Headers', 'Content-Type');
+            
+            // 发送错误响应
+            res.status(statusCode).json({
+                error: errorMessage,
+                timestamp: new Date().toISOString(),
+                filename: req.query.filename,
+                // 非生产环境下包含更多调试信息
+                ...(process.env.NODE_ENV !== 'production' && { details: error.message })
+            });
         }
     });
 };

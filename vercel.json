@@ -2,10 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "api/index.js",
       "use": "@vercel/node"
     },
@@ -20,19 +16,7 @@
   ],
   "rewrites": [
     {
-      "source": "/comfy/:path*",
-      "destination": "http://117.50.83.222:8188/:path*"
-    },
-    {
-      "source": "/comfyui/status",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/comfyui/submit",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/comfyui/result",
+      "source": "/api/:path*",
       "destination": "/api/index.js"
     },
     {
@@ -40,36 +24,12 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/queue/submit",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/queue/status",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/queue/stats",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/uploads/:path*",
-      "destination": "/uploads/:path*"
-    },
-    {
       "source": "/:path.(html|js|css|png|jpg|jpeg|gif|ico|json)",
       "destination": "/:path.$1"
     },
     {
-      "source": "/",
-      "destination": "/index.js"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/api/index.js"  
     }
   ],
   "env": {

@@ -18,8 +18,10 @@ module.exports = {
   jwtSecret: 'your-secret-key',
   
   comfyUI: {
-    // 所有环境都使用公网IP地址
-    apiUrl: process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || 'http://117.50.83.222:8188',
+    // 优先使用环境变量，生产环境使用相对路径以便配合Vercel重写规则
+    apiUrl: isProduction ? 
+      process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || '/comfy' : 
+      process.env.COMFYUI_URL || process.env.COMFYUI_API_URL || 'http://117.50.83.222:8188',
     timeout: 30000, // 请求超时时间（毫秒）
     workflowDir: path.join(__dirname, 'comfyui_workflows'),
     retryConfig: {
