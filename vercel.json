@@ -2,14 +2,12 @@
   "version": 2,
   "builds": [
     {
+      "src": "index.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 60,
-        "memory": 1024,
-        "includeFiles": "**",
-        "excludeFiles": ["node_modules/**", ".git/**"]     
-      }
+      "use": "@vercel/node"
     },
     {
       "src": "*.html",
@@ -22,31 +20,65 @@
   ],
   "rewrites": [
     {
+      "source": "/comfy/:path*",
+      "destination": "http://117.50.83.222:8188/:path*"
+    },
+    {
+      "source": "/comfyui/status",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/submit",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/result",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/comfyui/image-proxy",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/queue/submit",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/queue/status",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/queue/stats",
+      "destination": "/api/index.js"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/index.js"
     },
     {
-      "source": "/comfy/:path*",
-      "destination": "http://117.50.83.222:8188/:path*"
+      "source": "/uploads/:path*",
+      "destination": "/uploads/:path*"
     },
     {
       "source": "/:path.(html|js|css|png|jpg|jpeg|gif|ico|json)",
       "destination": "/:path.$1"
     },
     {
+      "source": "/",
+      "destination": "/index.js"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/api/index.js"
+      "destination": "/index.html"
     }
   ],
   "env": {
-    "NODE_ENV": "production",
-    "COMFYUI_URL": "http://117.50.83.222:8188/",
-    "COMFYUI_API_URL": "http://117.50.83.222:8188/",
-    "COMFYUI_TIMEOUT": "180000"
+    "NODE_ENV": "production"
+  
   },
   "headers": [
     {
-      "source": "/api/:path*",
+      "source": "/comfy/:path*",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
