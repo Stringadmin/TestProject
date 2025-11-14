@@ -31,5 +31,7 @@ app.use((req, res) => {
 });
 
 // 使用serverless-http包装Express应用，适配Vercel无服务器环境
-// 在Vercel环境中，只导出handler，避免冲突
+// 添加默认导出，确保Vercel能正确识别Express应用
+module.exports = app;
+// 同时保留handler导出，用于其他可能的无服务器环境
 module.exports.handler = serverless(app);
