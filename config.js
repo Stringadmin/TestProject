@@ -15,7 +15,7 @@ module.exports = {
     name: 'mydb'
   },
   
-  jwtSecret: 'your-secret-key',
+
   
   comfyUI: {
     // 优先从环境变量读取 ComfyUI 地址，环境变量在 vercel.json 中配置
