@@ -38,7 +38,7 @@ const logger = {
     }
 };
 
-// ComfyUI配置 - 从config.js获取
+// ComfyUI配置 - 从config.js获取（现在使用硬编码的绝对路径）
 const COMFYUI_CONFIG = {
     API_URL: (config.comfyUI.apiUrl || '').trim(), // 初始化时就去除空格
     PROMPT_ENDPOINT: 'prompt',
@@ -48,21 +48,14 @@ const COMFYUI_CONFIG = {
     WORKFLOW_DIR: path.join(__dirname, '..', config.comfyUI.workflowDir)
 };
 
-// 检查ComfyUI连接状态 (增强版本)
+// 检查ComfyUI连接状态
 // url参数：可选，允许外部传入修复后的URL
 exports.checkComfyUIConnection = async (url) => {
     const now = Date.now();
     
-    // 如果传入了URL，则使用传入的URL，否则获取配置中的URL
+    // 如果传入了URL，则使用传入的URL，否则获取配置中的URL（现在使用硬编码的绝对路径）
     let currentApiUrl = url || (config.comfyUI.apiUrl || '').trim();
     console.log(`[${new Date().toISOString()}] 使用的API URL: ${currentApiUrl}`);
-    
-    // 特殊处理相对路径（Vercel环境）- 保留相对路径以配合rewrites规则
-    const isRelativePath = currentApiUrl.startsWith('/');
-    console.log(`[${new Date().toISOString()}] 路径类型检查: ${isRelativePath ? '相对路径' : '绝对路径'}, 环境: ${process.env.NODE_ENV || 'development'}`);
-    
-    // 所有环境都使用配置的URL，不再强制切换路径
-    console.log(`[${new Date().toISOString()}] 当前使用的API URL: ${currentApiUrl}, 环境: ${process.env.NODE_ENV || 'development'}`);
 
     // 检查缓存
     if (connectionCache.lastCheck > now - connectionCache.expireTime && 
@@ -173,18 +166,9 @@ exports.uploadImageToComfyUI = async (imageBuffer, filename) => {
             contentType: 'image/jpeg'
         });
         
-        // 获取最新的API URL配置
+        // 获取API URL配置（现在使用硬编码的绝对路径）
         let apiUrl = (config.comfyUI.apiUrl || '').trim();
-        
-        // 重要：在Vercel环境中，保留相对路径格式以配合rewrites规则
-        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_URL: ${process.env.COMFYUI_URL}`);
-        console.log(`[${new Date().toISOString()}] 环境变量COMFYUI_API_URL: ${process.env.COMFYUI_API_URL}`);
         console.log(`[${new Date().toISOString()}] 配置文件apiUrl: ${apiUrl}`);
-        
-        // 默认值
-        if (!apiUrl) {
-            apiUrl = '/comfy';
-        }
         
         // 使用更安全的URL拼接方法
         apiUrl = apiUrl.replace(/\/$/, ''); // 确保没有尾部斜杠
@@ -793,31 +777,17 @@ exports.setupImageProxy = (app) => {
                 return res.status(400).json({ error: '缺少必要的图像参数' });
             }
             
-            // 获取最新的API URL配置
+            // 获取API URL配置（现在使用硬编码的绝对路径）
             let apiUrl = (config.comfyUI.apiUrl || '').trim();
             
-
-            
-            // 默认值
-            if (!apiUrl) {
-                apiUrl = '/comfy';
-            }
-            
             // 构建ComfyUI的原始图像URL
-            apiUrl = apiUrl.replace(/\/$/, '');
+            apiUrl = apiUrl.replace(/\/$/, ''); // 移除末尾斜杠
             
-            // 对于相对路径，直接拼接；对于绝对路径，使用URL构造函数
-            let originalImageUrl;
-            if (apiUrl.startsWith('/')) {
-                // 相对路径
-                originalImageUrl = `${apiUrl}/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`;
-            } else {
-                // 绝对路径
-                originalImageUrl = new URL(
-                    `/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`,
-                    apiUrl
-                ).href;
-            }
+            // 使用URL构造函数构建完整URL
+            let originalImageUrl = new URL(
+                `/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`,
+                apiUrl
+            ).href;
             
             console.log(`[${new Date().toISOString()}] 构建原始图像URL:`, originalImageUrl);
             

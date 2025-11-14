@@ -12,15 +12,6 @@ app.use(cors()); // 添加CORS支持
 app.use(express.json({ limit: '10mb' })); // JSON请求体解析
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // URL编码请求体解析
 
-// 在生产环境中为axios设置baseURL，解决Vercel Serverless环境中的相对路径问题
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'production' && req.headers.host) {
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    axios.defaults.baseURL = `${protocol}://${req.headers.host}`;
-    console.log(`[${new Date().toISOString()}] axios baseURL set to: ${axios.defaults.baseURL}`);
-  }
-  next();
-});
 
 // 注册图像代理路由（必须在路由配置之前，避免被404处理拦截）
 services.setupImageProxy(app);

@@ -32,14 +32,6 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/comfyui/image-proxy",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/comfyui/:path*",
-      "destination": "/api/index.js"
-    },
-    {
       "source": "/:path.(html|js|css|png|jpg|jpeg|gif|ico|json)",
       "destination": "/:path.$1"
     },
@@ -52,23 +44,6 @@
     "NODE_ENV": "production"
   },
   "headers": [
-    {
-      "source": "/comfyui/:path*",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
-    },
     {
       "source": "/api/:path*",
       "headers": [
