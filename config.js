@@ -18,8 +18,8 @@ module.exports = {
   jwtSecret: 'your-secret-key',
   
   comfyUI: {
-    // 硬编码的 ComfyUI 地址
-    apiUrl: 'http://117.50.83.222:8188/',
+    // 优先从环境变量读取 ComfyUI 地址，环境变量在 vercel.json 中配置
+    apiUrl: process.env.COMFYUI_URL || 'http://117.50.83.222:8188/',
     timeout: 30000, // 请求超时时间（毫秒）
     workflowDir: 'comfyui_workflows', // 相对路径，将在services中解析为绝对路径
     retryConfig: {

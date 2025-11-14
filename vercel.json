@@ -35,7 +35,8 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "COMFYUI_URL": "http://117.50.83.222:8188/"
   },
   "headers": [
     {
