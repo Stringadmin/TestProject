@@ -1,4 +1,20 @@
-const { v4: uuidv4 } = require('uuid');
+// 使用动态import来导入uuid，解决ESM兼容性问题
+let uuidv4;
+
+// 预加载uuid模块
+(async () => {
+  const uuidModule = await import('uuid');
+  uuidv4 = uuidModule.v4;
+})();
+
+// 备用的UUID生成函数（以防动态导入失败）
+function fallbackGenerateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 // 任务队列管理服务
 class QueueService {
@@ -32,7 +48,8 @@ class QueueService {
    * @returns {Object} 任务信息，包含jobId
    */
   addTask(taskData) {
-    const jobId = uuidv4();
+    // 使用uuidv4，如果未加载完成则使用备用函数
+    const jobId = uuidv4 ? uuidv4() : fallbackGenerateUUID();
     const job = {
       jobId,
       status: this.STATUS.PENDING,
